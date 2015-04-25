@@ -7,14 +7,13 @@ Currenlty supports just the basic feature of chatting with random strangers.
 # Overview
 
 This was written mainly as a learning excercise. I wanted to explore a little the advantages of JavaFX over Swing 
-when developing Java GUI applications. There are quite a few in my opinion but still 
+when developing Java GUI applications. There are quite a few in my opinion, but still I feel that I haven't even scratched the surface of their main differences, so a lot of work still to be done.
 
 # Prerequisites
 
 Written with Java 8 (JavaFX was used for the UI part). 
 
 Built with Gradle.
-
 
 # Contributing
 
