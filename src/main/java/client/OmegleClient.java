@@ -89,7 +89,7 @@ public class OmegleClient extends Application {
 	       	 
 	            @Override
 	            public void handle(ActionEvent event) {
-	            	if (service == null) service = new OmegleService();
+	            	/*if (service == null)*/ service = new OmegleService();
 	            	if (service != null)
 	            	{
 	            		chat.setText("Connected.");
@@ -141,13 +141,13 @@ public class OmegleClient extends Application {
 		}
 
 		private void addImages() {
-			Image image = new Image(getClass().getResourceAsStream("/images/send.png"));
+			Image image = new Image(getClass().getResourceAsStream(ClientConstants.RESOURCES+"send.png"));
 	        ImageView view = new ImageView(image);
 	        view.setFitHeight(20);
 	        view.setFitWidth(50);   
 	        send.setGraphic(view);    
 
-	        Image imageOmegle = new Image(getClass().getResourceAsStream("/images/omegle.png"));
+	        Image imageOmegle = new Image(getClass().getResourceAsStream(ClientConstants.RESOURCES+"omegle.png"));
 	        ImageView viewTop = new ImageView(imageOmegle);  
 	        lbl.setGraphic(viewTop);
 	        
@@ -159,12 +159,12 @@ public class OmegleClient extends Application {
 			String action = "";
 			if (status.equals(ClientConstants.STATUS_OFFLINE)) 
 			{
-				img = "/images/ON.png";
+				img = ClientConstants.RESOURCES+"ON.png";
 				action = "Connect";
 			}
 			else 
 			{
-				img = "/images/OFF.png";
+				img = ClientConstants.RESOURCES+"OFF.png";
 				action = "Disconnect";
 			}
 			Image imageConnect = new Image(getClass().getResourceAsStream(img));
@@ -224,6 +224,10 @@ public class OmegleClient extends Application {
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
 			chat.setStyle("-fx-border-color: red;");
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_OFFLINE);
+			if (service != null) {
+				service.destroy();
+				//service = null;
+			}
 			onConnectButtonAction();
 		}
 		

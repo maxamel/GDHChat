@@ -21,6 +21,7 @@ public class OmegleService {
 	public String currEvent = "";
 	private String status = ServerConstants.STATUS_OFFLINE;
 	private Thread main = null;
+	private MyTimer timer = new MyTimer();
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	
 	public ConcurrentLinkedQueue<String> getMsgs() {
@@ -63,11 +64,13 @@ public class OmegleService {
 		}
 	}
 
-	private void pollEvent() {
-		MyTimer timer = new MyTimer();
-		timer.schedule(() -> {
-			currEvent = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);//getOmegleEvent();
-		}, 0);
+	private void pollEvent() {	
+		try {
+			timer.schedule(() -> {
+				currEvent = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);//getOmegleEvent();
+			}, 0);
+		}
+		catch (IllegalStateException e){};		// in case the timer has been terminated but the main thread hasn't yet
 	}
 	
 	public String sendOmegleHttpRequest(String endPoint, String msg)
@@ -172,10 +175,18 @@ public class OmegleService {
 	private class MyTimer {
 		  private final Timer t = new Timer();
 
-		  public TimerTask schedule(final Runnable r, long delay) {
+		  private TimerTask schedule(final Runnable r, long delay) {
 		     final TimerTask task = new TimerTask() { public void run() { r.run(); }};
 		     t.schedule(task, delay);
 		     return task;
 		  }
-		}
+		  
+		  private void destroy() {
+			  t.cancel();
+		  }
+	}
+	public void destroy() {
+		//if (main != null) main.interrupt();
+		timer.destroy();
+	}
 }
