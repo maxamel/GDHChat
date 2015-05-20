@@ -3,9 +3,13 @@ version = '1.0'
 archivesBaseName = 'DesktopOmegle'
 repositories {
     mavenCentral()
+	maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/' 
+    }
 }
 dependencies {
     compile 'org.json:json:20090211'
+	compile 'org.fxmisc.richtext:richtextfx:0.6.4'
 }
 jar {
 	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }

@@ -1,7 +1,12 @@
 package main.java.client;
 
-import main.java.server.OmegleService;
+import java.awt.List;
+import java.util.ArrayList;
+import java.util.Stack;
 
+import org.fxmisc.richtext.InlineCssTextArea;
+
+import main.java.server.OmegleService;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -18,6 +23,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -25,7 +32,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class OmegleClient extends Application {
-	private static OmegleService service;
+	private OmegleService service;
 	private Timeline timeline;
 	private String currEvent = "";
 	private boolean isTyping = false;
@@ -34,6 +41,8 @@ public class OmegleClient extends Application {
 	private Label StrangerStatus = new Label();
 	private Button connection = new Button();
 	private TextArea chat = new TextArea();
+	private InlineCssTextArea interests = new InlineCssTextArea();
+	private ArrayList<Integer> list = new ArrayList<>();
 	    
 	public static void main(String[] args) {	    	
 	        launch(args);        
@@ -65,13 +74,16 @@ public class OmegleClient extends Application {
 	        setGridLayout(gridpane);
 	        GridPane upperPane = new GridPane();       
 	        setupUpperPane(upperPane);
+	        GridPane middlePane = new GridPane();       
+	        setupMiddlePane(middlePane);
 	        GridPane lowerPane = new GridPane();
 	        setLowerLayout(lowerPane);
 	        gridpane.add(lbl, 0, 0);
 	        gridpane.add(upperPane, 0, 1);
 	        gridpane.add(chat, 0, 2);
-	        gridpane.add(area, 0, 3);           
-	        gridpane.add(lowerPane, 0, 4);
+	        gridpane.add(middlePane, 0, 3);
+	        gridpane.add(area, 0, 4);           
+	        gridpane.add(lowerPane, 0, 5);
 	        
 	        root.getChildren().add(gridpane);
 	        primaryStage.setScene(new Scene(root, 600, 600));
@@ -89,7 +101,7 @@ public class OmegleClient extends Application {
 	       	 
 	            @Override
 	            public void handle(ActionEvent event) {
-	            	/*if (service == null)*/ service = new OmegleService();
+	            	service = OmegleService.getInstance();
 	            	if (service != null)
 	            	{
 	            		chat.setText("Connected.");
@@ -131,6 +143,62 @@ public class OmegleClient extends Application {
 	            	}
 	            }
 	        });
+		}
+		
+
+		private void setupMiddlePane(GridPane middlePane) {
+			middlePane.setAlignment(Pos.CENTER);
+			Label interest = new Label("Interests: ");
+			middlePane.add(interest, 0, 0);
+			middlePane.add(interests, 1, 0);
+			
+			interests.setPrefWidth(450);
+			interests.setStyle("-fx-border-color: black; "
+					+ "-fx-font: 15px \"Serif\"; "
+					+ "-fx-fill: #818181;"
+					);
+			interestsKeyListener();
+		}
+
+		private void interestsKeyListener() {
+			interests.setOnKeyPressed(new EventHandler<KeyEvent>() {
+				@Override
+				public void handle(KeyEvent key) {
+					if (key.getCode().equals(KeyCode.ENTER))
+					{
+						key.consume();
+						interests.appendText(",");
+						interests.setStyle(0, interests.getText().length()-1, 
+								"-fx-fill: blue;"
+								+"-fx-font: 20px \"Tahoma\";"	
+								);
+						if (list.isEmpty()) list.add(0);
+						list.add(interests.getText().length());
+						System.out.println(list.toString());
+					}
+					else if (key.getCode().equals(KeyCode.BACK_SPACE) && list.contains(interests.getCaretPosition()) )
+					{
+						key.consume();
+						if (list.size() > 1) 
+						{
+							interests.clearStyle(list.get(list.size()-2), interests.getText().length());
+							//interests.replaceText(list.get(list.size()-2), interests.getText().length(), "");	
+							list.remove(list.size()-1);
+						}
+						else 
+						{
+							interests.replaceText("");
+							list = new ArrayList<Integer>();
+							interests.setStyle("-fx-border-color: black; "
+									+ "-fx-font: 15px \"Serif\"; "
+									+ "-fx-fill: #818181;"
+									);
+						}
+						System.out.println(list.toString());
+					}
+					//else key.consume();
+				}
+			});
 		}
 
 		private void setupUpperPane(GridPane upperPane) {
@@ -267,12 +335,14 @@ public class OmegleClient extends Application {
 	        RowConstraints row2 = new RowConstraints();
 	        row2.setPercentHeight(5);
 	        RowConstraints row3 = new RowConstraints();
-	        row3.setPercentHeight(40);
+	        row3.setPercentHeight(35);
 	        RowConstraints row4 = new RowConstraints();
-	        row4.setPercentHeight(30);
+	        row4.setPercentHeight(5);
 	        RowConstraints row5 = new RowConstraints();
-	        row5.setPercentHeight(15);
-	        gridpane.getRowConstraints().addAll(row1, row2, row3, row4, row5); // each get 50% of width       
+	        row5.setPercentHeight(30);
+	        RowConstraints row6 = new RowConstraints();
+	        row6.setPercentHeight(15);
+	        gridpane.getRowConstraints().addAll(row1, row2, row3, row4, row5, row6); // each get 50% of width       
 		}		
 	}
 

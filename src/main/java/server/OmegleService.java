@@ -17,26 +17,21 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class OmegleService {
+	private static OmegleService service = null;
 	private String clientId = "";
-	public String currEvent = "";
+	private String currEvent = "";
 	private String status = ServerConstants.STATUS_OFFLINE;
 	private Thread main = null;
 	private MyTimer timer = new MyTimer();
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	
-	public ConcurrentLinkedQueue<String> getMsgs() {
-		return msgs;
+	public static OmegleService getInstance()
+	{
+		if (service == null) service = new OmegleService();
+		return service;
 	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public String getCurrEvent() {
-		return currEvent;
-	}
-
-	public OmegleService()
+	
+	private OmegleService()
 	{
 		if (sendOmegleHttpRequest(ServerConstants.URL_CONNECT, null).equals("win")/*getOmegleClient()*/) 
 		{
@@ -63,6 +58,19 @@ public class OmegleService {
 			main.start();
 		}
 	}
+	public ConcurrentLinkedQueue<String> getMsgs() {
+		return msgs;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public String getCurrEvent() {
+		return currEvent;
+	}
+
+	
 
 	private void pollEvent() {	
 		try {
@@ -186,7 +194,7 @@ public class OmegleService {
 		  }
 	}
 	public void destroy() {
-		//if (main != null) main.interrupt();
 		timer.destroy();
+		service = null;
 	}
 }
