@@ -1,8 +1,7 @@
 package main.java.client;
 
-import java.awt.List;
 import java.util.ArrayList;
-import java.util.Stack;
+import java.util.List;
 
 import org.fxmisc.richtext.InlineCssTextArea;
 
@@ -25,6 +24,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -42,7 +42,7 @@ public class OmegleClient extends Application {
 	private Button connection = new Button();
 	private TextArea chat = new TextArea();
 	private InlineCssTextArea interests = new InlineCssTextArea();
-	private ArrayList<Integer> list = new ArrayList<>();
+	private ArrayList<Integer> interestsIndices = new ArrayList<>();
 	    
 	public static void main(String[] args) {	    	
 	        launch(args);        
@@ -51,6 +51,7 @@ public class OmegleClient extends Application {
 	    @Override
 	    public void start(Stage primaryStage) {
 	        primaryStage.setTitle("Omegle");   
+	        primaryStage.setResizable(false);
 	        setupStatusLabel(StrangerStatus);
 	        onDisconnect();
 	        chat.setStyle("-fx-border-color: red;-fx-background-color: white;");
@@ -104,6 +105,8 @@ public class OmegleClient extends Application {
 	            	service = OmegleService.getInstance();
 	            	if (service != null)
 	            	{
+	            		if (interestsIndices.size() > 1) connectWithInterests();
+	            		else service.sendOmegleHttpRequest(ClientConstants.URL_CONNECT, null);
 	            		chat.setText("Connected.");
 	            		onConnect();
 	            		isTyping = false;
@@ -144,7 +147,56 @@ public class OmegleClient extends Application {
 	            }
 	        });
 		}
+
+
+		private synchronized void  connectWithInterests(){
+			String urlConn = ClientConstants.URL_CONNECT;
+        	if (getInterests().size() > 0) urlConn = String.format(ClientConstants.URL_CONNECT_INTERESTS,processInterests(getInterests()));
+			try
+			{
+				boolean connected = false;
+				long start = System.currentTimeMillis();
+				long end = (long) (start + Duration.seconds(5).toMillis());
+				while (System.currentTimeMillis() < end) {
+				    wait(1000);
+				    if (service.sendOmegleHttpRequest(urlConn, null).equals("win")) 
+				    {
+				    	connected = true;
+				    	break;
+				    }
+				}
+				if (!connected) service.sendOmegleHttpRequest(ClientConstants.URL_STOPSEARCH, null);
+			}
+			catch(InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+		}
 		
+		private String processInterests(List<String> interests) 
+		{
+			String result = "topics=";
+			String start = "%5B%22";
+			String delim = "%22%2c%22";
+			String end = "%22%5D";
+			
+			result += start;
+			for (int i=0; i<interests.size()-1; i++)
+				result += interests.get(i)+delim;		
+			result += interests.get(interests.size()-1);
+			result += end;
+			
+			return result;
+		}
+
+		private List<String> getInterests() 
+		{
+			List<String> result = new ArrayList<String>();
+			String textToProcess = interests.getText();
+			for (int i=0; i<interestsIndices.size()-1; i++)
+				result.add(textToProcess.substring(interestsIndices.get(i), interestsIndices.get(i+1)-1));
+			return result;
+		}
 
 		private void setupMiddlePane(GridPane middlePane) {
 			middlePane.setAlignment(Pos.CENTER);
@@ -157,10 +209,26 @@ public class OmegleClient extends Application {
 					+ "-fx-font: 15px \"Serif\"; "
 					+ "-fx-fill: #818181;"
 					);
-			interestsKeyListener();
+			setupInterestsListeners();
 		}
 
-		private void interestsKeyListener() {
+		private void setupInterestsListeners() {		// disable text selection or movement of cursor with arrows. Only writing and deleting is supported
+			
+			interests.setOnMousePressed(new EventHandler<MouseEvent>() {
+				@Override
+				public void handle(MouseEvent arg0) {
+					interests.selectRange(0, 0);
+					interests.positionCaret(interests.getLength());
+				}
+			});
+			interests.setOnMouseDragged(new EventHandler<MouseEvent>() {
+
+				@Override
+				public void handle(MouseEvent event) {
+					interests.selectRange(0, 0);
+					interests.positionCaret(interests.getLength());
+				}
+			});
 			interests.setOnKeyPressed(new EventHandler<KeyEvent>() {
 				@Override
 				public void handle(KeyEvent key) {
@@ -172,31 +240,31 @@ public class OmegleClient extends Application {
 								"-fx-fill: blue;"
 								+"-fx-font: 20px \"Tahoma\";"	
 								);
-						if (list.isEmpty()) list.add(0);
-						list.add(interests.getText().length());
-						System.out.println(list.toString());
+						if (interestsIndices.isEmpty()) interestsIndices.add(0);
+						interestsIndices.add(interests.getText().length());
 					}
-					else if (key.getCode().equals(KeyCode.BACK_SPACE) && list.contains(interests.getCaretPosition()) )
+					else if (key.getCode().equals(KeyCode.BACK_SPACE) && interestsIndices.contains(interests.getCaretPosition()) )
 					{
 						key.consume();
-						if (list.size() > 1) 
+						if (interestsIndices.size() > 1) 
 						{
-							interests.clearStyle(list.get(list.size()-2), interests.getText().length());
-							//interests.replaceText(list.get(list.size()-2), interests.getText().length(), "");	
-							list.remove(list.size()-1);
+							interests.clearStyle(interestsIndices.get(interestsIndices.size()-2), interests.getText().length());
+							interests.replaceText(interests.getText().length()-1, interests.getText().length(), "");	
+							interestsIndices.remove(interestsIndices.size()-1);
 						}
 						else 
 						{
 							interests.replaceText("");
-							list = new ArrayList<Integer>();
+							interestsIndices = new ArrayList<Integer>();
 							interests.setStyle("-fx-border-color: black; "
 									+ "-fx-font: 15px \"Serif\"; "
 									+ "-fx-fill: #818181;"
 									);
 						}
-						System.out.println(list.toString());
+						System.out.println(interestsIndices.toString());
 					}
-					//else key.consume();
+					else if (key.getCode().equals(KeyCode.LEFT) || key.getCode().equals(KeyCode.RIGHT))
+						key.consume();
 				}
 			});
 		}
@@ -281,6 +349,7 @@ public class OmegleClient extends Application {
 	            		service.sendOmegleHttpRequest(ClientConstants.URL_DISCONNECT,null);//sendOmegleMsg(toSend);
 	            		isTyping = false;
 	            		chat.setText(chat.getText()+"\nYou Disconnected. "); 
+	            		interests.setEditable(true);
 	            		timeline.stop();
 	            		onDisconnect();
 	            	}
@@ -291,6 +360,7 @@ public class OmegleClient extends Application {
 			send.setDisable(true);
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
 			chat.setStyle("-fx-border-color: red;");
+			interests.replaceText("");
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_OFFLINE);
 			if (service != null) {
 				service.destroy();
@@ -305,6 +375,7 @@ public class OmegleClient extends Application {
 			updateConnectionButton(ClientConstants.STATUS_ONLINE); 
 			chat.setStyle("-fx-border-color: greenyellow;");
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_IDLE);
+			interests.setEditable(false);
 			onDisconnectButtonAction();
 		}
 

@@ -33,30 +33,31 @@ public class OmegleService {
 	
 	private OmegleService()
 	{
-		if (sendOmegleHttpRequest(ServerConstants.URL_CONNECT, null).equals("win")/*getOmegleClient()*/) 
-		{
-			main = new Thread(new Runnable() {			
-				@Override
-				public void run() {
-					while (status.equals(ServerConstants.STATUS_ONLINE))
+	
+	}
+	private void activate()
+	{
+		main = new Thread(new Runnable() {			
+			@Override
+			public void run() {
+				while (status.equals(ServerConstants.STATUS_ONLINE))
+				{
+					pollEvent();
+					if (currEvent != null)
 					{
-						pollEvent();
-						if (currEvent != null)
-						{
-							if (currEvent.equals(ServerConstants.EVENT_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
-							else if (currEvent.equals(ServerConstants.EVENT_CONNECTED)) status = ServerConstants.STATUS_ONLINE;
-						}
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+						if (currEvent.equals(ServerConstants.EVENT_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
+						else if (currEvent.equals(ServerConstants.EVENT_CONNECTED)) status = ServerConstants.STATUS_ONLINE;
+					}
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
-			});	
-			main.start();
-		}
+			}
+		});	
+		main.start();
 	}
 	public ConcurrentLinkedQueue<String> getMsgs() {
 		return msgs;
@@ -75,7 +76,7 @@ public class OmegleService {
 	private void pollEvent() {	
 		try {
 			timer.schedule(() -> {
-				currEvent = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);//getOmegleEvent();
+				if (currEvent != ServerConstants.EVENT_DISCONNECT) currEvent = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);//getOmegleEvent();
 			}, 0);
 		}
 		catch (IllegalStateException e){};		// in case the timer has been terminated but the main thread hasn't yet
@@ -116,12 +117,20 @@ public class OmegleService {
 		return null;
 	}
 	
-	private String processText(String url	, String text) 
+	private String processText(String url, String text) 
 	{
 		if (text.equals(ServerConstants.SUCCESS_MSG))
 		{
-			if (url.equals(ServerConstants.URL_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
-			else if (url.equals(ServerConstants.URL_CONNECT)) status = ServerConstants.STATUS_ONLINE;
+			if (url.equals(ServerConstants.URL_DISCONNECT)) 
+			{
+				status = ServerConstants.STATUS_OFFLINE;
+				destroy();
+			}
+			else if (url.contains(ServerConstants.BASE_URL_BODY) || url.equals(ServerConstants.URL_STOPSEARCH)) 
+			{
+				status = ServerConstants.STATUS_ONLINE;
+				activate();
+			}
 			
 			return ServerConstants.SUCCESS_MSG;
 		}	
@@ -135,6 +144,7 @@ public class OmegleService {
 		{
 			clientId = client;
 			status = ServerConstants.STATUS_ONLINE;
+			activate();
 			return ServerConstants.SUCCESS_MSG;
 		}
 		else return (retrieveEvent(json));
@@ -150,7 +160,7 @@ public class OmegleService {
 		conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36");
 		conn.setRequestProperty("Origin", "http://www.omegle.com");
 		
-		if (urlSend.equals(ServerConstants.URL_EVENT) || urlSend.equals(ServerConstants.URL_CONNECT))conn.setRequestProperty("Accept","application/json");
+		if (urlSend.equals(ServerConstants.URL_EVENT) || urlSend.contains(ServerConstants.BASE_URL_BODY))conn.setRequestProperty("Accept","application/json");
 		else if (urlSend.equals(ServerConstants.URL_SEND)) conn.setRequestProperty("Content-Length",contentLen);
 	}
 
