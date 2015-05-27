@@ -17,6 +17,7 @@ public class ServerConstants {
 	public final static String EVENT_TYPING = "typing";
 	public final static String EVENT_GOTMESSAGE = "gotMessage";
 	public final static String EVENT_DISCONNECT = "strangerDisconnected";
+	public final static String EVENT_COMMONLIKES = "commonLikes";
 	
 	public final static String STATUS_ONLINE = "online";
 	public final static String STATUS_OFFLINE = "offline";

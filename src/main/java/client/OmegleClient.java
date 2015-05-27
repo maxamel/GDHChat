@@ -105,8 +105,7 @@ public class OmegleClient extends Application {
 	            	service = OmegleService.getInstance();
 	            	if (service != null)
 	            	{
-	            		if (interestsIndices.size() > 1) connectWithInterests();
-	            		else service.sendOmegleHttpRequest(ClientConstants.URL_CONNECT, null);
+	            		connectWithInterests();
 	            		chat.setText("Connected.");
 	            		onConnect();
 	            		isTyping = false;
@@ -159,7 +158,7 @@ public class OmegleClient extends Application {
 				long end = (long) (start + Duration.seconds(5).toMillis());
 				while (System.currentTimeMillis() < end) {
 				    wait(1000);
-				    if (service.sendOmegleHttpRequest(urlConn, null).equals("win")) 
+				    if (service.sendOmegleHttpRequest(urlConn, null) != null) 
 				    {
 				    	connected = true;
 				    	break;
@@ -349,7 +348,6 @@ public class OmegleClient extends Application {
 	            		service.sendOmegleHttpRequest(ClientConstants.URL_DISCONNECT,null);//sendOmegleMsg(toSend);
 	            		isTyping = false;
 	            		chat.setText(chat.getText()+"\nYou Disconnected. "); 
-	            		interests.setEditable(true);
 	            		timeline.stop();
 	            		onDisconnect();
 	            	}
@@ -360,7 +358,10 @@ public class OmegleClient extends Application {
 			send.setDisable(true);
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
 			chat.setStyle("-fx-border-color: red;");
+			interests.clearStyle(0, interests.getText().length());
 			interests.replaceText("");
+			interests.setEditable(true);
+			interestsIndices.clear();
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_OFFLINE);
 			if (service != null) {
 				service.destroy();
@@ -376,6 +377,12 @@ public class OmegleClient extends Application {
 			chat.setStyle("-fx-border-color: greenyellow;");
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_IDLE);
 			interests.setEditable(false);
+			interests.replaceText(service.getLikes());
+			interests.setStyle(0, interests.getText().length(),
+					"-fx-border-color: black; "
+					+ "-fx-font: 15px \"Consolas\"; "
+					+ "-fx-fill: #818181;"
+					);
 			onDisconnectButtonAction();
 		}
 

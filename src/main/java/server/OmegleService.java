@@ -19,11 +19,12 @@ import org.json.JSONObject;
 public class OmegleService {
 	private static OmegleService service = null;
 	private String clientId = "";
-	private String currEvent = "";
+	private ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();;
 	private String status = ServerConstants.STATUS_OFFLINE;
 	private Thread main = null;
 	private MyTimer timer = new MyTimer();
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
+	private String likes = "";
 	
 	public static OmegleService getInstance()
 	{
@@ -43,10 +44,12 @@ public class OmegleService {
 				while (status.equals(ServerConstants.STATUS_ONLINE))
 				{
 					pollEvent();
-					if (currEvent != null)
+					String event = currEvents.peek();
+					if (event != null)
 					{
-						if (currEvent.equals(ServerConstants.EVENT_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
-						else if (currEvent.equals(ServerConstants.EVENT_CONNECTED)) status = ServerConstants.STATUS_ONLINE;
+						
+						if (event.equals(ServerConstants.EVENT_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
+						else if (event.equals(ServerConstants.EVENT_CONNECTED)) status = ServerConstants.STATUS_ONLINE;
 					}
 					try {
 						Thread.sleep(1000);
@@ -62,21 +65,26 @@ public class OmegleService {
 	public ConcurrentLinkedQueue<String> getMsgs() {
 		return msgs;
 	}
+	
+	public String getLikes() {
+		return likes;
+	}
 
 	public String getStatus() {
 		return status;
 	}
 
 	public String getCurrEvent() {
-		return currEvent;
+		return currEvents.poll();
 	}
-
-	
 
 	private void pollEvent() {	
 		try {
 			timer.schedule(() -> {
-				if (currEvent != ServerConstants.EVENT_DISCONNECT) currEvent = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);//getOmegleEvent();
+				String event = "";
+				if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
+					if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
+						currEvents.add(event);
 			}, 0);
 		}
 		catch (IllegalStateException e){};		// in case the timer has been terminated but the main thread hasn't yet
@@ -143,8 +151,11 @@ public class OmegleService {
 		if ((client = retrieveClientId(json)) != null)
 		{
 			clientId = client;
-			status = ServerConstants.STATUS_ONLINE;
 			activate();
+		}
+		if (retrieveConnAndLikes(json) != null)
+		{
+			status = ServerConstants.STATUS_ONLINE;
 			return ServerConstants.SUCCESS_MSG;
 		}
 		else return (retrieveEvent(json));
@@ -162,6 +173,53 @@ public class OmegleService {
 		
 		if (urlSend.equals(ServerConstants.URL_EVENT) || urlSend.contains(ServerConstants.BASE_URL_BODY))conn.setRequestProperty("Accept","application/json");
 		else if (urlSend.equals(ServerConstants.URL_SEND)) conn.setRequestProperty("Content-Length",contentLen);
+	}
+
+	private Object retrieveConnAndLikes(String json) 
+	{
+		JSONObject jsonobj = null;
+		JSONArray event = null;
+		JSONArray jsonarr = null;
+		Object ret = null;
+		try {
+			jsonobj = new JSONObject(json);
+			jsonarr = (JSONArray) jsonobj.get("events");
+			for (int i=0; i<jsonarr.length(); i++)
+			{
+				event = (JSONArray) jsonarr.get(i);	
+				if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
+					ret = event.get(0);
+				if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
+				{
+					JSONArray array_of_likes = (JSONArray) event.get(1);
+					for (int j=0; j<array_of_likes.length()-1; j++)
+						likes += array_of_likes.get(j)+",";
+					likes += array_of_likes.get(array_of_likes.length()-1);
+				}
+			}
+			return ret;
+		} catch (JSONException e) {
+			try {
+				JSONArray array = new JSONArray(json);
+				for (int i=0; i<array.length(); i++)
+				{
+					event = (JSONArray) array.get(i);
+					if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
+						ret = event.get(0);
+					if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
+					{
+						JSONArray array_of_likes = (JSONArray) event.get(1);
+						for (int j=0; j<array_of_likes.length()-1; j++)
+							likes += array_of_likes.get(j)+",";
+						likes += array_of_likes.get(array_of_likes.length()-1);
+					}
+				}
+			}
+			catch (JSONException e2) {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	private String retrieveClientId(String json) {

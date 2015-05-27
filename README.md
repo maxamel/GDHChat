@@ -26,7 +26,9 @@ Possibilities for enhancement:
 
 1) Write basic tests for the service module.
 
-2) Support the feature of connecting strangers on the basis of interests.
+2) Document the entire code.
 
-3) Support the reCaptcha service using JavaFX webpage rendering (when Omegle supports this). 
+3) Add progress bar when searching for users with common interests.
+
+4) Support the reCaptcha service using JavaFX webpage rendering (when Omegle supports this). 
 
