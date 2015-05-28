@@ -260,7 +260,6 @@ public class OmegleClient extends Application {
 									+ "-fx-fill: #818181;"
 									);
 						}
-						System.out.println(interestsIndices.toString());
 					}
 					else if (key.getCode().equals(KeyCode.LEFT) || key.getCode().equals(KeyCode.RIGHT))
 						key.consume();

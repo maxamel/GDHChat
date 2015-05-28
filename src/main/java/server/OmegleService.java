@@ -22,7 +22,6 @@ public class OmegleService {
 	private ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();;
 	private String status = ServerConstants.STATUS_OFFLINE;
 	private Thread main = null;
-	private MyTimer timer = new MyTimer();
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	private String likes = "";
 	
@@ -38,29 +37,30 @@ public class OmegleService {
 	}
 	private void activate()
 	{
-		main = new Thread(new Runnable() {			
-			@Override
-			public void run() {
-				while (status.equals(ServerConstants.STATUS_ONLINE))
-				{
-					pollEvent();
-					String event = currEvents.peek();
-					if (event != null)
+		if (main == null)
+		{
+			main = new Thread(new Runnable() {			
+				@Override
+				public void run() {
+					while (status.equals(ServerConstants.STATUS_ONLINE))
 					{
-						
-						if (event.equals(ServerConstants.EVENT_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
-						else if (event.equals(ServerConstants.EVENT_CONNECTED)) status = ServerConstants.STATUS_ONLINE;
-					}
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						pollEvent();
+						String event = currEvents.peek();
+						if (event != null)
+						{						
+							if (event.equals(ServerConstants.EVENT_DISCONNECT)) status = ServerConstants.STATUS_OFFLINE;
+							else if (event.equals(ServerConstants.EVENT_CONNECTED)) status = ServerConstants.STATUS_ONLINE;
+						}
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							// interruption can occur when destroying the service - it's fine
+						}
 					}
 				}
-			}
-		});	
-		main.start();
+			});	
+			main.start();
+		}
 	}
 	public ConcurrentLinkedQueue<String> getMsgs() {
 		return msgs;
@@ -79,15 +79,10 @@ public class OmegleService {
 	}
 
 	private void pollEvent() {	
-		try {
-			timer.schedule(() -> {
-				String event = "";
-				if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
-					if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
-						currEvents.add(event);
-			}, 0);
-		}
-		catch (IllegalStateException e){};		// in case the timer has been terminated but the main thread hasn't yet
+		String event = "";
+		if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
+			if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
+				currEvents.add(event);
 	}
 	
 	public String sendOmegleHttpRequest(String endPoint, String msg)
@@ -150,6 +145,7 @@ public class OmegleService {
 		String client = "";
 		if ((client = retrieveClientId(json)) != null)
 		{
+			status = ServerConstants.STATUS_ONLINE;
 			clientId = client;
 			activate();
 		}
@@ -208,6 +204,7 @@ public class OmegleService {
 						ret = event.get(0);
 					if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
 					{
+						likes = "";
 						JSONArray array_of_likes = (JSONArray) event.get(1);
 						for (int j=0; j<array_of_likes.length()-1; j++)
 							likes += array_of_likes.get(j)+",";
@@ -248,21 +245,8 @@ public class OmegleService {
 		}
 		return (String) ret;
 	}
-	private class MyTimer {
-		  private final Timer t = new Timer();
-
-		  private TimerTask schedule(final Runnable r, long delay) {
-		     final TimerTask task = new TimerTask() { public void run() { r.run(); }};
-		     t.schedule(task, delay);
-		     return task;
-		  }
-		  
-		  private void destroy() {
-			  t.cancel();
-		  }
-	}
 	public void destroy() {
-		timer.destroy();
+		main.interrupt();
 		service = null;
 	}
 }
