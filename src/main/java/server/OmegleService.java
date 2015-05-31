@@ -8,8 +8,6 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.json.JSONArray;
@@ -25,6 +23,10 @@ public class OmegleService {
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	private String likes = "";
 	
+	/**
+	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
+	 * @return the service itself
+	 */
 	public static OmegleService getInstance()
 	{
 		if (service == null) service = new OmegleService();
@@ -35,9 +37,12 @@ public class OmegleService {
 	{
 	
 	}
+	/**
+	 * 	Activation of the service itself. Polls Omegle every second for an event.  
+	 */
 	private void activate()
 	{
-		if (main == null)
+		if (main == null && service != null)
 		{
 			main = new Thread(new Runnable() {			
 				@Override
@@ -78,13 +83,23 @@ public class OmegleService {
 		return currEvents.poll();
 	}
 
+	/**
+	 *  Poll for an event. Done by performing POST request to Omegle. 
+	 * 	If there's an active event it'll be inserted into the queue, otherwise nothing happens
+	 */
 	private void pollEvent() {	
 		String event = "";
 		if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
 			if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
 				currEvents.add(event);
 	}
-	
+	/**
+	 * Send an HTTP request to an Omegle endpoint. Use clientID and attach message if exists. Forward the response to methods ProcessJson or ProcessText accordingly
+	 * 
+	 * @param endPoint - where to send the request to
+	 * @param msg - the contents of the message
+	 * @return the possible return values are as described in ProcessJson and ProcessText
+	 */
 	public String sendOmegleHttpRequest(String endPoint, String msg)
 	{
 			URL url = null;
@@ -120,6 +135,12 @@ public class OmegleService {
 		return null;
 	}
 	
+	/**
+	 * 	If the request was successful - we destroy or activate the service as needed and return success.
+	 * 	@param url - the endpoint from which we got the response
+	 * 	@param text - the response text
+	 * 	@return Success message if the request was successful, otherwise null
+	 */
 	private String processText(String url, String text) 
 	{
 		if (text.equals(ServerConstants.SUCCESS_MSG))
@@ -133,13 +154,17 @@ public class OmegleService {
 			{
 				status = ServerConstants.STATUS_ONLINE;
 				activate();
-			}
-			
+			}		
 			return ServerConstants.SUCCESS_MSG;
 		}	
 		return null;
 	}
 
+	/**
+	 * Try to look for clientID, connection keyword and common interests in the response message. If none found, try to retrieve the event in it
+	 * @param the response in json format
+	 * @return Success message or as described in retrieveEvent
+	 */
 	private String processJson(String json) 
 	{
 		String client = "";
@@ -157,6 +182,14 @@ public class OmegleService {
 		else return (retrieveEvent(json));
 	}
 
+	/**
+	 * 	Set the headers for the connection. Special cases like POSTing an event are treated a bit differently
+	 * 
+	 * 	@param conn - an opened connection 
+	 * 	@param urlSend - the endpoint of this connection
+	 * 	@param contentLen - content length. Could be null for certain occasion in which the default value of 42 is used
+	 * 	@throws ProtocolException
+	 */
 	private void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
 	{
 		conn.setRequestMethod("POST");
@@ -171,6 +204,12 @@ public class OmegleService {
 		else if (urlSend.equals(ServerConstants.URL_SEND)) conn.setRequestProperty("Content-Length",contentLen);
 	}
 
+	/**
+	 * 	Try to look for the connect keyword signifying a successful connection and the common likes with the current stranger
+	 * 
+	 * 	@param json
+	 * 	@return null if unsuccessful or the connection keyword as received in the json
+	 */
 	private Object retrieveConnAndLikes(String json) 
 	{
 		JSONObject jsonobj = null;
@@ -187,6 +226,7 @@ public class OmegleService {
 					ret = event.get(0);
 				if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
 				{
+					likes = "";
 					JSONArray array_of_likes = (JSONArray) event.get(1);
 					for (int j=0; j<array_of_likes.length()-1; j++)
 						likes += array_of_likes.get(j)+",";
@@ -211,14 +251,20 @@ public class OmegleService {
 						likes += array_of_likes.get(array_of_likes.length()-1);
 					}
 				}
+				return ret;
 			}
 			catch (JSONException e2) {
 				return null;
 			}
 		}
-		return null;
 	}
 
+	/**
+	 * 	Try to look for the clientID in the json and return it
+	 * 
+	 * 	@param json
+	 * 	@return null if unsuccessful or the clientID 
+	 */
 	private String retrieveClientId(String json) {
 		JSONObject jsonobj = null;
 		Object ret;
@@ -230,7 +276,12 @@ public class OmegleService {
 		}
 		return (String) ret;
 	}
-	
+	/**
+	 * 	Return the event in the json. If it's a message received add it to the messages queue
+	 * 
+	 * 	@param json
+	 * 	@return null if unsuccessful or the event
+	 */
 	private String retrieveEvent(String json) {
 		JSONArray jsonobj = null;
 		Object ret;
@@ -245,8 +296,17 @@ public class OmegleService {
 		}
 		return (String) ret;
 	}
+	/**
+	 * 	Destroying this service -
+	 * 		Interrupt the polling mechanism and nullify the main and service components.
+	 * 		After this the constructor needs to be called again to reactivate the service
+	 */
 	public void destroy() {
-		main.interrupt();
+		if (main != null) 
+		{
+			main.interrupt();
+			main = null;
+		}
 		service = null;
 	}
 }
