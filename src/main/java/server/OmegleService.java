@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -22,6 +23,7 @@ public class OmegleService {
 	private Thread main = null;
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	private String likes = "";
+	private int timeouts = 0;
 	
 	/**
 	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
@@ -47,7 +49,7 @@ public class OmegleService {
 			main = new Thread(new Runnable() {			
 				@Override
 				public void run() {
-					while (status.equals(ServerConstants.STATUS_ONLINE))
+					while (status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
 					{
 						pollEvent();
 						String event = currEvents.peek();
@@ -111,6 +113,7 @@ public class OmegleService {
 				conn = (HttpURLConnection) url.openConnection();
 				setHeaders(conn,endPoint,"42");
 				conn.setDoOutput(true);
+				conn.setReadTimeout(3000);
 				os = conn.getOutputStream();
 				String toSend = String.join("=", "id",clientId);
 				if (msg != null)
@@ -129,9 +132,13 @@ public class OmegleService {
 				else return processText(endPoint,res);
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
+			} catch (SocketTimeoutException e) {
+				e.printStackTrace();
+				timeouts++;
+				if (timeouts > 6) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
+			} 
 		return null;
 	}
 	
@@ -307,6 +314,7 @@ public class OmegleService {
 			main.interrupt();
 			main = null;
 		}
+		timeouts = 0;
 		service = null;
 	}
 }
