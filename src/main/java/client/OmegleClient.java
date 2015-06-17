@@ -20,6 +20,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -48,6 +49,9 @@ public class OmegleClient extends Application {
 	        launch(args);        
 	    }
 	    
+		/**
+		 * 		Setup all the UI elements and start the process of polling the service
+		 */
 	    @Override
 	    public void start(Stage primaryStage) {
 	        primaryStage.setTitle("Omegle");   
@@ -58,6 +62,7 @@ public class OmegleClient extends Application {
 	        chat.setPrefSize(400, 200);
 	        chat.setEditable(false);
 	        TextArea area = new TextArea();
+	        area.setTooltip(new Tooltip("Enter your message here"));
 	        onAreaAction(area);
 	        addImages();
 	        connection.setPrefWidth(100);
@@ -90,13 +95,19 @@ public class OmegleClient extends Application {
 	        primaryStage.setScene(new Scene(root, 600, 600));
 	        primaryStage.show();
 	    }
-
+	    /**
+	     *  Scroll down the chat box - called after every incoming message so the user will see the most recent message.
+	     * 
+	     */
 		private void scrollDown() {
 			ScrollPane scrollPane = (ScrollPane) chat.lookup(".scroll-pane"); 
     		if (scrollPane != null) 
     			scrollPane.setVvalue(1.0);
 		}
 
+		/**
+		 * 	Pressing of the connect button results in polling the service every 150 millis for an event and changing the view accordingly
+		 */
 		private void onConnectButtonAction() {
 			connection.setOnAction(new EventHandler<ActionEvent>() {
 	       	 
@@ -147,7 +158,10 @@ public class OmegleClient extends Application {
 	        });
 		}
 
-
+		/**
+		 * 		If interests bar isn't empty try to connect with interests. You get 5 chances in 1 second intervals for this connection.
+		 * 		Otherwise connect normally.  
+		 */
 		private synchronized void  connectWithInterests(){
 			String urlConn = ClientConstants.URL_CONNECT;
         	if (getInterests().size() > 0) urlConn = String.format(ClientConstants.URL_CONNECT_INTERESTS,processInterests(getInterests()));
@@ -172,6 +186,11 @@ public class OmegleClient extends Application {
 			}
 		}
 		
+		/**
+		 * 
+		 * 		@param interests
+		 * 		@return The part of the url containing the interests
+		 */
 		private String processInterests(List<String> interests) 
 		{
 			String result = "topics=";
@@ -188,6 +207,10 @@ public class OmegleClient extends Application {
 			return result;
 		}
 
+		/**
+		 * 
+		 * 		@return a list of the interests the user inserted in the interests bar
+		 */
 		private List<String> getInterests() 
 		{
 			List<String> result = new ArrayList<String>();
@@ -197,20 +220,10 @@ public class OmegleClient extends Application {
 			return result;
 		}
 
-		private void setupMiddlePane(GridPane middlePane) {
-			middlePane.setAlignment(Pos.CENTER);
-			Label interest = new Label("Interests: ");
-			middlePane.add(interest, 0, 0);
-			middlePane.add(interests, 1, 0);
-			
-			interests.setPrefWidth(450);
-			interests.setStyle("-fx-border-color: black; "
-					+ "-fx-font: 15px \"Serif\"; "
-					+ "-fx-fill: #818181;"
-					);
-			setupInterestsListeners();
-		}
-
+		/**
+		 * 		Configure the behavior of the interests bar. Although it's a regular text box there are some differences. 
+		 * 		Dragging the mouse and marking text isn't possible. Only writing and deleting is supported
+		 */
 		private void setupInterestsListeners() {		// disable text selection or movement of cursor with arrows. Only writing and deleting is supported
 			
 			interests.setOnMousePressed(new EventHandler<MouseEvent>() {
@@ -234,13 +247,18 @@ public class OmegleClient extends Application {
 					if (key.getCode().equals(KeyCode.ENTER))
 					{
 						key.consume();
-						interests.appendText(",");
-						interests.setStyle(0, interests.getText().length()-1, 
-								"-fx-fill: blue;"
-								+"-fx-font: 20px \"Tahoma\";"	
-								);
-						if (interestsIndices.isEmpty()) interestsIndices.add(0);
-						interestsIndices.add(interests.getText().length());
+						if (interestsIndices.size() == 0 || interests.getText().length() > interestsIndices.get(interestsIndices.size()-1) + 1)
+						{
+							interests.appendText(",");
+							interests.setStyle(0, interests.getText().length()-1, 
+						    		"-fx-stroke: indigo;"
+						    		+"-fx-stroke-width: 1px;"
+						    		+"border:solid 1px #ccc; "
+									+"-fx-font: 17px \"Consolas\";"	
+									);
+							if (interestsIndices.isEmpty()) interestsIndices.add(0);
+							interestsIndices.add(interests.getText().length());
+						}
 					}
 					else if (key.getCode().equals(KeyCode.BACK_SPACE) && interestsIndices.contains(interests.getCaretPosition()) )
 					{
@@ -265,15 +283,11 @@ public class OmegleClient extends Application {
 						key.consume();
 				}
 			});
+			interests.setTooltip(new Tooltip("Insert your interests seperated by ENTER"));
 		}
-
-		private void setupUpperPane(GridPane upperPane) {
-			upperPane.setAlignment(Pos.CENTER);
-			Label stranger = new Label("Stranger Status: ");
-	        upperPane.add(stranger, 0, 0);
-	        upperPane.add(StrangerStatus, 1, 0);
-		}
-
+		/**
+		 * 		Add images to the dialog
+		 */
 		private void addImages() {
 			Image image = new Image(getClass().getResourceAsStream(ClientConstants.RESOURCES+"send.png"));
 	        ImageView view = new ImageView(image);
@@ -288,6 +302,10 @@ public class OmegleClient extends Application {
 	        updateConnectionButton(ClientConstants.STATUS_OFFLINE);         
 		}
 
+		/**
+		 * 		Update the connection button according to the server status
+		 * 		@param status - the current server status 
+		 */
 		private void updateConnectionButton(String status) {
 			String img = "";
 			String action = "";
@@ -309,11 +327,15 @@ public class OmegleClient extends Application {
 	        connection.setText(action);
 		}
 
+		/**
+		 * 		Listener to the text box of the user. Used to send a TYPING event to Omegle
+		 * 		@param area - the text box containing the users' message
+		 */
 		private void onAreaAction(TextArea area) {
 			area.setOnKeyTyped(new EventHandler<Event>() {
 				@Override
 				public void handle(Event arg0) {
-					if (!isTyping)
+					if (!isTyping && service != null)
 					{
 						service.sendOmegleHttpRequest(ClientConstants.URL_TYPING, null);//sendOmegleTypeSignal();
 						isTyping = true;
@@ -321,6 +343,11 @@ public class OmegleClient extends Application {
 				}
 			});
 		}
+		
+		/**
+		 * 		Upon sending a message the view should change. Send the message via the active service we point to
+		 * 		@param area - the chat area where the user inputs text	
+		 */
 		private void onSendButtonAction(TextArea area) {
 			send.setOnAction(new EventHandler<ActionEvent>() {
 	 
@@ -337,6 +364,10 @@ public class OmegleClient extends Application {
 	            }
 	        });
 		}
+		
+		/**
+		 * 		Upon pressing the disconnect button we send the disconnection event, change the view, stop polling for further events and call onDisconnect 
+		 */
 		private void onDisconnectButtonAction() {
 			connection.setOnAction(new EventHandler<ActionEvent>() {
 	 
@@ -350,9 +381,13 @@ public class OmegleClient extends Application {
 	            		timeline.stop();
 	            		onDisconnect();
 	            	}
-	            }
+	            }	
 	        });
 		}
+		
+		/**
+		 * 		Called upon disconnection - involves changing the view accordingly and destroying the service
+		 */
 		private void onDisconnect() {
 			send.setDisable(true);
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
@@ -369,7 +404,9 @@ public class OmegleClient extends Application {
 			onConnectButtonAction();
 		}
 		
-
+		/**
+		 * 		Called upon connection - involves changing the view accordingly
+		 */
 		private void onConnect() {
 			send.setDisable(false);
 			updateConnectionButton(ClientConstants.STATUS_ONLINE); 
@@ -385,6 +422,10 @@ public class OmegleClient extends Application {
 			onDisconnectButtonAction();
 		}
 
+		/**
+		 * 		The Label containing the status of the counterpart
+		 * 		@param lowerpane - the panel we're adding elements to
+		 */
 		private void setupStatusLabel(Label status) {
 			status.setStyle("-fx-border-color: black; "
 					+ "-fx-font: 16px \"Serif\"; "
@@ -395,6 +436,10 @@ public class OmegleClient extends Application {
 	        status.setPrefWidth(200);
 		}
 
+		/**
+		 * 		The Panel containing the lower buttons of Send and Connect/Disconnect
+		 * 		@param lowerpane - the panel we're adding elements to
+		 */
 		private void setLowerLayout(GridPane lowerpane) {
 			ColumnConstraints col1 = new ColumnConstraints();
 	        col1.setPercentWidth(50);
@@ -405,7 +450,42 @@ public class OmegleClient extends Application {
 	        lowerpane.add(send, 0, 0);
 	        lowerpane.add(connection, 1, 0);	        
 		}
+		
+		/**
+		 * 		The panel containing the interests bar
+		 * 		@param middlePane - the panel we're adding elements to
+		 */
+		private void setupMiddlePane(GridPane middlePane) {
+			middlePane.setAlignment(Pos.CENTER);
+			Label interest = new Label("Interests: ");
+			middlePane.add(interest, 0, 0);
+			middlePane.add(interests, 1, 0);
+			
+			interests.setPrefWidth(450);
+			interests.setStyle("-fx-border-color: black; "
+					+ "-fx-font: 15px \"Serif\"; "
+					+ "-fx-fill: #818181;"
+					);
+			setupInterestsListeners();
+		}
 
+
+		/**
+		 *		The Panel containing the stranger status 
+		 * 		@param upperPane - the panel we're adding elements to
+		 */
+		private void setupUpperPane(GridPane upperPane) {
+			upperPane.setAlignment(Pos.CENTER);
+			Label stranger = new Label("Stranger Status: ");
+	        upperPane.add(stranger, 0, 0);
+	        upperPane.add(StrangerStatus, 1, 0);
+		}
+
+
+		/**
+		 * 		Modify the main panel - define the outlay of elements inside it. The division is in percentage
+		 * 		@param gridpane - the panel being modified
+		 */
 		private void setGridLayout(GridPane gridpane) {
 			RowConstraints row1 = new RowConstraints();
 	        row1.setPercentHeight(10);

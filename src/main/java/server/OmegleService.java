@@ -113,7 +113,7 @@ public class OmegleService {
 				conn = (HttpURLConnection) url.openConnection();
 				setHeaders(conn,endPoint,"42");
 				conn.setDoOutput(true);
-				conn.setReadTimeout(3000);
+				conn.setReadTimeout(7000);
 				os = conn.getOutputStream();
 				String toSend = String.join("=", "id",clientId);
 				if (msg != null)
@@ -135,7 +135,7 @@ public class OmegleService {
 			} catch (SocketTimeoutException e) {
 				e.printStackTrace();
 				timeouts++;
-				if (timeouts > 6) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
+				if (timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
 			} catch (IOException e) {
 				e.printStackTrace();
 			} 
