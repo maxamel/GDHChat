@@ -25,5 +25,5 @@ public class ClientConstants {
 	public final static String STATUS_ONLINE = "online";
 	public final static String STATUS_OFFLINE = "offline";
 	
-	public final static String RESOURCES = "/main/resources/images/";
+	public final static String RESOURCES = "/images/";
 }
