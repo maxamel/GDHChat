@@ -17,19 +17,19 @@ import org.json.JSONObject;
 
 public class OmegleService {
 	private static OmegleService service = null;
-	private String clientId = "";
-	private ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();;
-	private String status = ServerConstants.STATUS_OFFLINE;
-	private Thread main = null;
-	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
-	private String likes = "";
-	private int timeouts = 0;
+	private static String clientId = "";
+	private static ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();;
+	private static String status = ServerConstants.STATUS_OFFLINE;
+	private static Thread main = null;
+	private static ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
+	private static String likes = "";
+	private static int timeouts = 0;
 	
 	/**
 	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
 	 * @return the service itself
 	 */
-	public static OmegleService getInstance()
+	public static synchronized OmegleService getInstance()
 	{
 		if (service == null) service = new OmegleService();
 		return service;
@@ -42,11 +42,11 @@ public class OmegleService {
 	/**
 	 * 	Activation of the service itself. Polls Omegle every second for an event.  
 	 */
-	private void activate()
+	private static synchronized void activate()
 	{
 		if (main == null && service != null)
 		{
-			main = new Thread(new Runnable() {			
+			OmegleService.main = new Thread(new Runnable() {			
 				@Override
 				public void run() {
 					while (status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
@@ -66,7 +66,7 @@ public class OmegleService {
 					}
 				}
 			});	
-			main.start();
+			OmegleService.main.start();
 		}
 	}
 	public ConcurrentLinkedQueue<String> getMsgs() {
@@ -89,7 +89,7 @@ public class OmegleService {
 	 *  Poll for an event. Done by performing POST request to Omegle. 
 	 * 	If there's an active event it'll be inserted into the queue, otherwise nothing happens
 	 */
-	private void pollEvent() {	
+	private static void pollEvent() {	
 		String event = "";
 		if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
 			if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
@@ -102,7 +102,7 @@ public class OmegleService {
 	 * @param msg - the contents of the message
 	 * @return the possible return values are as described in ProcessJson and ProcessText
 	 */
-	public String sendOmegleHttpRequest(String endPoint, String msg)
+	public static String sendOmegleHttpRequest(String endPoint, String msg)
 	{
 			URL url = null;
 			HttpURLConnection conn = null;
@@ -126,15 +126,15 @@ public class OmegleService {
 				os.close();
 				is = conn.getInputStream();
 				@SuppressWarnings("resource")
-				String res = new Scanner(is).useDelimiter("\\A").next();
+				String res = new Scanner(is,"UTF-8").useDelimiter("\\A").next();
 				is.close();	
 				if (res != null && conn.getRequestProperty("Accept").equals("application/json")) return processJson(res);
 				else return processText(endPoint,res);
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (SocketTimeoutException e) {
-				e.printStackTrace();
-				timeouts++;
+				System.out.println("Timedout!");
+				OmegleService.timeouts++;
 				if (timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -148,7 +148,7 @@ public class OmegleService {
 	 * 	@param text - the response text
 	 * 	@return Success message if the request was successful, otherwise null
 	 */
-	private String processText(String url, String text) 
+	private static String processText(String url, String text) 
 	{
 		if (text.equals(ServerConstants.SUCCESS_MSG))
 		{
@@ -172,7 +172,7 @@ public class OmegleService {
 	 * @param the response in json format
 	 * @return Success message or as described in retrieveEvent
 	 */
-	private String processJson(String json) 
+	private static String processJson(String json) 
 	{
 		String client = "";
 		if ((client = retrieveClientId(json)) != null)
@@ -197,7 +197,7 @@ public class OmegleService {
 	 * 	@param contentLen - content length. Could be null for certain occasion in which the default value of 42 is used
 	 * 	@throws ProtocolException
 	 */
-	private void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
+	private static void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
 	{
 		conn.setRequestMethod("POST");
 		conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded"); 
@@ -217,7 +217,7 @@ public class OmegleService {
 	 * 	@param json
 	 * 	@return null if unsuccessful or the connection keyword as received in the json
 	 */
-	private Object retrieveConnAndLikes(String json) 
+	private static Object retrieveConnAndLikes(String json) 
 	{
 		JSONObject jsonobj = null;
 		JSONArray event = null;
@@ -272,7 +272,7 @@ public class OmegleService {
 	 * 	@param json
 	 * 	@return null if unsuccessful or the clientID 
 	 */
-	private String retrieveClientId(String json) {
+	private static String retrieveClientId(String json) {
 		JSONObject jsonobj = null;
 		Object ret;
 		try {
@@ -289,7 +289,7 @@ public class OmegleService {
 	 * 	@param json
 	 * 	@return null if unsuccessful or the event
 	 */
-	private String retrieveEvent(String json) {
+	private static String retrieveEvent(String json) {
 		JSONArray jsonobj = null;
 		Object ret;
 		try {
@@ -308,13 +308,13 @@ public class OmegleService {
 	 * 		Interrupt the polling mechanism and nullify the main and service components.
 	 * 		After this the constructor needs to be called again to reactivate the service
 	 */
-	public void destroy() {
+	public static synchronized void destroy() {
 		if (main != null) 
 		{
-			main.interrupt();
-			main = null;
+			OmegleService.main.interrupt();
+			OmegleService.main = null;
 		}
-		timeouts = 0;
-		service = null;
+		OmegleService.timeouts = 0;
+		OmegleService.service = null;
 	}
 }

@@ -193,18 +193,18 @@ public class OmegleClient extends Application {
 		 */
 		private String processInterests(List<String> interests) 
 		{
-			String result = "topics=";
+			StringBuilder result = new StringBuilder("topics=");
 			String start = "%5B%22";
 			String delim = "%22%2c%22";
 			String end = "%22%5D";
 			
-			result += start;
+			result.append(start);
 			for (int i=0; i<interests.size()-1; i++)
-				result += interests.get(i)+delim;		
-			result += interests.get(interests.size()-1);
-			result += end;
+				result.append(interests.get(i)+delim);		
+			result.append(interests.get(interests.size()-1));
+			result.append(end);
 			
-			return result;
+			return result.toString();
 		}
 
 		/**
