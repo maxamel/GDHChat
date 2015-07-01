@@ -1,5 +1,6 @@
 package main.java.client;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -289,13 +290,19 @@ public class OmegleClient extends Application {
 		 * 		Add images to the dialog
 		 */
 		private void addImages() {
-			Image image = new Image(getClass().getResourceAsStream(ClientConstants.RESOURCES+"send.png"));
+			InputStream input = getClass().getClassLoader().getResourceAsStream(ClientConstants.RESOURCES+"send.png");
+			Image image = new Image(input);
 	        ImageView view = new ImageView(image);
 	        view.setFitHeight(20);
 	        view.setFitWidth(50);   
 	        send.setGraphic(view);    
 
-	        Image imageOmegle = new Image(getClass().getResourceAsStream(ClientConstants.RESOURCES+"omegle.png"));
+	        /*Image imageOmegle = new Image(getClass().getClassLoader().getResourceAsStream(ClientConstants.RESOURCES+"omegle.png"));
+	        ImageView viewTop = new ImageView(imageOmegle);  
+	        lbl.setGraphic(viewTop);
+	        */
+	        InputStream in = getClass().getClassLoader().getResourceAsStream(ClientConstants.RESOURCES+"omegle.png");
+	        Image imageOmegle = new Image(in);
 	        ImageView viewTop = new ImageView(imageOmegle);  
 	        lbl.setGraphic(viewTop);
 	        
@@ -319,7 +326,8 @@ public class OmegleClient extends Application {
 				img = ClientConstants.RESOURCES+"OFF.png";
 				action = "Disconnect";
 			}
-			Image imageConnect = new Image(getClass().getResourceAsStream(img));
+			InputStream in = getClass().getClassLoader().getResourceAsStream(img);
+			Image imageConnect = new Image(in);
 	        ImageView viewBottom = new ImageView(imageConnect);
 	        viewBottom.setFitHeight(20);
 	        viewBottom.setFitWidth(20);   
