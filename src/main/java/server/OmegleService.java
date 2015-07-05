@@ -15,6 +15,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class OmegleService {
 	private static OmegleService service = null;
 	private static String clientId = "";
@@ -42,7 +44,7 @@ public class OmegleService {
 	/**
 	 * 	Activation of the service itself. Polls Omegle every second for an event.  
 	 */
-	private static synchronized void activate()
+	private synchronized void activate()
 	{
 		if (main == null && service != null)
 		{
@@ -89,7 +91,7 @@ public class OmegleService {
 	 *  Poll for an event. Done by performing POST request to Omegle. 
 	 * 	If there's an active event it'll be inserted into the queue, otherwise nothing happens
 	 */
-	private static void pollEvent() {	
+	private void pollEvent() {	
 		String event = "";
 		if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
 			if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
@@ -102,7 +104,8 @@ public class OmegleService {
 	 * @param msg - the contents of the message
 	 * @return the possible return values are as described in ProcessJson and ProcessText
 	 */
-	public static String sendOmegleHttpRequest(String endPoint, String msg)
+	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+	public String sendOmegleHttpRequest(String endPoint, String msg)
 	{
 			URL url = null;
 			HttpURLConnection conn = null;
@@ -148,7 +151,8 @@ public class OmegleService {
 	 * 	@param text - the response text
 	 * 	@return Success message if the request was successful, otherwise null
 	 */
-	private static String processText(String url, String text) 
+	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+	private String processText(String url, String text) 
 	{
 		if (text.equals(ServerConstants.SUCCESS_MSG))
 		{
@@ -172,7 +176,8 @@ public class OmegleService {
 	 * @param the response in json format
 	 * @return Success message or as described in retrieveEvent
 	 */
-	private static String processJson(String json) 
+	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+	private String processJson(String json) 
 	{
 		String client = "";
 		if ((client = retrieveClientId(json)) != null)
@@ -181,11 +186,7 @@ public class OmegleService {
 			clientId = client;
 			activate();
 		}
-		if (retrieveConnAndLikes(json) != null)
-		{
-			status = ServerConstants.STATUS_ONLINE;
-			return ServerConstants.SUCCESS_MSG;
-		}
+		if (retrieveConnAndLikes(json) != null) return ServerConstants.SUCCESS_MSG;
 		else return (retrieveEvent(json));
 	}
 
@@ -197,7 +198,7 @@ public class OmegleService {
 	 * 	@param contentLen - content length. Could be null for certain occasion in which the default value of 42 is used
 	 * 	@throws ProtocolException
 	 */
-	private static void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
+	private void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
 	{
 		conn.setRequestMethod("POST");
 		conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded"); 
@@ -217,53 +218,56 @@ public class OmegleService {
 	 * 	@param json
 	 * 	@return null if unsuccessful or the connection keyword as received in the json
 	 */
-	private static Object retrieveConnAndLikes(String json) 
+	private Object retrieveConnAndLikes(String json) 
 	{
 		JSONObject jsonobj = null;
 		JSONArray event = null;
 		JSONArray jsonarr = null;
-		Object ret = null;
 		try {
 			jsonobj = new JSONObject(json);
 			jsonarr = (JSONArray) jsonobj.get("events");
-			for (int i=0; i<jsonarr.length(); i++)
-			{
-				event = (JSONArray) jsonarr.get(i);	
-				if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
-					ret = event.get(0);
-				if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
-				{
-					likes = "";
-					JSONArray array_of_likes = (JSONArray) event.get(1);
-					for (int j=0; j<array_of_likes.length()-1; j++)
-						likes += array_of_likes.get(j)+",";
-					likes += array_of_likes.get(array_of_likes.length()-1);
-				}
-			}
-			return ret;
+			return handleJsonEvents(jsonarr);
 		} catch (JSONException e) {
 			try {
 				JSONArray array = new JSONArray(json);
-				for (int i=0; i<array.length(); i++)
-				{
-					event = (JSONArray) array.get(i);
-					if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
-						ret = event.get(0);
-					if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
-					{
-						likes = "";
-						JSONArray array_of_likes = (JSONArray) event.get(1);
-						for (int j=0; j<array_of_likes.length()-1; j++)
-							likes += array_of_likes.get(j)+",";
-						likes += array_of_likes.get(array_of_likes.length()-1);
-					}
-				}
-				return ret;
+				return handleJsonEvents(array);
 			}
 			catch (JSONException e2) {
 				return null;
 			}
 		}
+	}
+	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+	private Object handleJsonEvents(JSONArray array) throws JSONException {
+		JSONArray event;
+		Object ret = null;
+		for (int i=0; i<array.length(); i++)
+		{
+			event = (JSONArray) array.get(i);
+			if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
+			{
+				status = ServerConstants.STATUS_ONLINE;
+				ret = event.get(0);
+			}
+			if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
+				retrieveLikes(event);
+			if (event.get(0).equals(ServerConstants.EVENT_GOTMESSAGE))
+				msgs.add(event.getString(1));
+			if (event.get(0).equals(ServerConstants.EVENT_DISCONNECT))
+			{
+				status = ServerConstants.STATUS_OFFLINE;
+				destroy();
+			}
+		}
+		return ret;
+	}
+	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+	private void retrieveLikes(JSONArray event) throws JSONException {
+		likes = "";
+		JSONArray array_of_likes = (JSONArray) event.get(1);
+		for (int j=0; j<array_of_likes.length()-1; j++)
+			likes += array_of_likes.get(j)+",";
+		likes += array_of_likes.get(array_of_likes.length()-1);
 	}
 
 	/**
@@ -272,7 +276,7 @@ public class OmegleService {
 	 * 	@param json
 	 * 	@return null if unsuccessful or the clientID 
 	 */
-	private static String retrieveClientId(String json) {
+	private String retrieveClientId(String json) {
 		JSONObject jsonobj = null;
 		Object ret;
 		try {
@@ -289,15 +293,18 @@ public class OmegleService {
 	 * 	@param json
 	 * 	@return null if unsuccessful or the event
 	 */
-	private static String retrieveEvent(String json) {
+	private String retrieveEvent(String json) {
 		JSONArray jsonobj = null;
-		Object ret;
+		Object ret = null;
 		try {
 			jsonobj = new JSONArray(json);
-			JSONArray firstObj = (JSONArray) jsonobj.get(0);
-			ret = firstObj.get(0);
-			if (ret.equals(ServerConstants.EVENT_GOTMESSAGE)) 
-				msgs.add((String) firstObj.get(1));
+			for (int i=0; i<jsonobj.length(); i++)
+			{
+				JSONArray firstObj = (JSONArray) jsonobj.get(i);
+				ret = firstObj.get(0);
+				if (ret.equals(ServerConstants.EVENT_GOTMESSAGE)) 
+					msgs.add((String) firstObj.get(1));
+			}
 		} catch (JSONException e) {
 			return null;
 		}

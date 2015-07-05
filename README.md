@@ -9,9 +9,15 @@ Currenlty supports just the basic feature of chatting with random strangers or w
 This was written mainly as a learning experience. 
 After developing with Java Swing for many years I wanted to explore the possibilities of JavaFX, and I'm grateful I did. A whole new world was uncovered before my eyes.
 The intention was to make a software project which would follow the high-cohesion, low-coupling principle. If anyone has doubts or questions regarding the design and code please raise an issue, I'd be happy to hear.
+
 I hope someone will find this useful.
 
 The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. I had second thoughts before releasing this code since it could be used to write botnets (which Omegle is already full of), but when I found out Omegle was implementing reCaptcha to fight bots I decided it was OK. 
+
+#Testing
+
+The application was mostly tested manually, there a few unit tests for the Service module. 
+Currently writing further tests is the top priority. 
 
 # Prerequisites
 
@@ -25,11 +31,9 @@ Contributions are welcome. Please submit an issue before submitting a pull reque
 
 Possibilities for enhancement:
 
-1) Write basic tests for the service module.
+1) Write tests for server+client modules.
 
-2) Document the entire code.
+2) Add progress bar when searching for users with common interests.
 
-3) Add progress bar when searching for users with common interests.
-
-4) Support the reCaptcha service using JavaFX webpage rendering (when Omegle supports this). 
+3) Support the reCaptcha service using JavaFX webpage rendering (when Omegle supports this). 
 

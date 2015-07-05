@@ -297,10 +297,6 @@ public class OmegleClient extends Application {
 	        view.setFitWidth(50);   
 	        send.setGraphic(view);    
 
-	        /*Image imageOmegle = new Image(getClass().getClassLoader().getResourceAsStream(ClientConstants.RESOURCES+"omegle.png"));
-	        ImageView viewTop = new ImageView(imageOmegle);  
-	        lbl.setGraphic(viewTop);
-	        */
 	        InputStream in = getClass().getClassLoader().getResourceAsStream(ClientConstants.RESOURCES+"omegle.png");
 	        Image imageOmegle = new Image(in);
 	        ImageView viewTop = new ImageView(imageOmegle);  
