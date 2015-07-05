@@ -3,7 +3,7 @@ apply plugin: 'findbugs'
   findbugs {
   toolVersion = "3.0.0"
 }
-version = '1.2'
+version = '1.3'
 archivesBaseName = 'DesktopOmegle'
 repositories {
     mavenCentral()
@@ -12,23 +12,18 @@ repositories {
     }
 }
 dependencies {
-    compile 'org.json:json:20090211'
+    	compile 'org.json:json:20090211'
 	compile 'org.fxmisc.richtext:richtextfx:0.6.4'
 	compile 'org.reactfx:reactfx:2.0-M4'
 	compile 'org.fxmisc.flowless:flowless:0.4.4'
 	compile 'org.fxmisc.undo:undofx:1.1'
 	compile 'org.fxmisc.wellbehaved:WellBehavedFX:0.1.1'
+	compile 'com.google.code.findbugs:findbugs:3.0.1'
+	compile 'junit:junit:4.12'
+	compile 'org.mockito:mockito-all:2.0.2-beta'
 }
-sourceSets {
-   main {
-     resources {
-            srcDir 'src/images'
-        }
-     output.resourcesDir = 'src/'
-   }
- }
  clean{
-    delete "/lib"
+    	delete "/lib"
 	delete "/bin"
 }
 jar {
@@ -45,4 +40,8 @@ task copyDeps(type: Copy) {
         fileName.replace('-20090211', '')
     }
 }
-build.dependsOn(copyDeps)
+task deleteBuildTmp(type: Delete) {
+	delete "build/tmp" 
+  }
+build.dependsOn(deleteBuildTmp)
+deleteBuildTmp.dependsOn(copyDeps)
