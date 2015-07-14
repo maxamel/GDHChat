@@ -10,11 +10,15 @@ import main.java.server.OmegleService;
 import main.java.server.ServerConstants;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static org.mockito.Mockito.*;
 
+//@RunWith(PowerMockRunner.class)
 public class ServiceTester {
 	
 	@Test
@@ -38,6 +42,8 @@ public class ServiceTester {
 			method.invoke(service, jsonAnswer);
 			assertEquals(service.getLikes(),"israel");
 			assertTrue(service.getMsgs().contains("hi"));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_GOTMESSAGE));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Unreachable state! " + e.getMessage());
@@ -56,6 +62,7 @@ public class ServiceTester {
 			method.setAccessible(true);
 			method.invoke(service, jsonAnswer);
 			assertTrue(service.getMsgs().contains("hi"));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_GOTMESSAGE));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
@@ -75,6 +82,8 @@ public class ServiceTester {
 			method.invoke(service, jsonAnswer);
 			assertTrue(service.getMsgs().contains("hi"));
 			assertTrue(service.getLikes().contains("Israel")&&service.getLikes().contains("Russia")&&service.getLikes().contains("Afghanistan"));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_GOTMESSAGE));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
@@ -94,6 +103,8 @@ public class ServiceTester {
 			method.invoke(service, jsonAnswer);
 			assertTrue(service.getStatus().equals(ServerConstants.STATUS_OFFLINE));
 			assertTrue(service.getMsgs().contains("hi"));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_DISCONNECT));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
@@ -112,6 +123,64 @@ public class ServiceTester {
 			method.setAccessible(true);
 			method.invoke(service, jsonAnswer);
 			assertTrue(service.getStatus().equals(ServerConstants.STATUS_ONLINE));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
+		} catch (Exception e) {
+			System.out.println("Unreachable state!");
+		} 
+	}
+	@Test
+	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
+	public void testParseSimpleDisconnected() {
+		OmegleService service = OmegleService.getInstance();
+		
+		String jsonAnswer = "[[\"strangerDisconnected\"],[\"statusInfo\"]]";
+		try {
+			Class[] cArg = new Class[1];
+	        cArg[0] = String.class;
+			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
+			method.setAccessible(true);
+			method.invoke(service, jsonAnswer);
+			assertTrue(service.getStatus().equals(ServerConstants.STATUS_OFFLINE));
+			//assertTrue(findEvent(service, ServerConstants.EVENT_DISCONNECT));
+		} catch (Exception e) {
+			System.out.println("Unreachable state!");
+		} 
+	}
+	@Test
+	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
+	public void testPollingEventsDisconnect() {
+		OmegleService mockService = Mockito.spy(OmegleService.getInstance());
+		when(mockService.sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)).thenReturn(ServerConstants.EVENT_DISCONNECT);
+		when(mockService.getCurrEvent()).thenCallRealMethod();
+		try {
+			org.powermock.reflect.Whitebox.invokeMethod(mockService, "pollEvent");
+			assertTrue(mockService.getCurrEvent().equals(ServerConstants.EVENT_DISCONNECT));
+		} catch (Exception e) {
+			System.out.println("Unreachable state!");
+		} 
+	}
+	@Test
+	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
+	public void testPollingEventsConnect() {
+		OmegleService mockService = Mockito.spy(OmegleService.getInstance());
+		when(mockService.sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)).thenReturn(ServerConstants.EVENT_CONNECTED);
+		when(mockService.getCurrEvent()).thenCallRealMethod();
+		try {
+			org.powermock.reflect.Whitebox.invokeMethod(mockService, "pollEvent");
+			assertTrue(mockService.getCurrEvent().equals(ServerConstants.EVENT_CONNECTED));
+		} catch (Exception e) {
+			System.out.println("Unreachable state!");
+		} 
+	}
+	@Test
+	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
+	public void testPollingEventsMessage() {
+		OmegleService mockService = Mockito.spy(OmegleService.getInstance());
+		when(mockService.sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)).thenReturn(ServerConstants.EVENT_GOTMESSAGE);
+		when(mockService.getCurrEvent()).thenCallRealMethod();
+		try {
+			org.powermock.reflect.Whitebox.invokeMethod(mockService, "pollEvent");
+			assertTrue(mockService.getCurrEvent().equals(ServerConstants.EVENT_GOTMESSAGE));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 

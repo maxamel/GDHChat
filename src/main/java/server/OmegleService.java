@@ -257,6 +257,7 @@ public class OmegleService {
 			{
 				status = ServerConstants.STATUS_OFFLINE;
 				destroy();
+				ret = event.get(0);
 			}
 		}
 		return ret;
