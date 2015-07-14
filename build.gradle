@@ -21,6 +21,7 @@ dependencies {
 	compile 'com.google.code.findbugs:findbugs:3.0.1'
 	compile 'junit:junit:4.12'
 	compile 'org.mockito:mockito-all:2.0.2-beta'
+	compile compile 'org.powermock:powermock-mockito-release-full:1.6.2'
 }
  clean{
     	delete "/lib"
