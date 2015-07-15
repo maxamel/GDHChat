@@ -2,23 +2,17 @@ package test.java.gen;
 
 import static org.junit.Assert.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import main.java.client.OmegleClient;
 import main.java.server.OmegleService;
 import main.java.server.ServerConstants;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static org.mockito.Mockito.*;
 
-//@RunWith(PowerMockRunner.class)
 public class ServiceTester {
 	
 	@Test
@@ -35,19 +29,20 @@ public class ServiceTester {
 		
 		String jsonAnswer = "{\"events\":[[\"waiting\"],[\"connected\"],[\"commonLikes\",[\"israel\"] ],[\"gotMessage\",\"hi\"]] }";
 		try {
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 	        cArg[0] = String.class;
 			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
 			method.setAccessible(true);
 			method.invoke(service, jsonAnswer);
 			assertEquals(service.getLikes(),"israel");
-			assertTrue(service.getMsgs().contains("hi"));
+			assertTrue(service.getMsgs().contains("hi") && service.getMsgs().size() == 1);
 			//assertTrue(findEvent(service, ServerConstants.EVENT_GOTMESSAGE));
 			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Unreachable state! " + e.getMessage());
 		} 
+		OmegleService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -56,7 +51,7 @@ public class ServiceTester {
 		
 		String jsonAnswer = "[[\"gotMessage\",\"hi\"]] ";
 		try {
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 	        cArg[0] = String.class;
 			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
 			method.setAccessible(true);
@@ -66,6 +61,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 	
 	@Test
@@ -75,18 +71,19 @@ public class ServiceTester {
 		
 		String jsonAnswer =  "[[\"connected\"],[\"commonLikes\",[\"Israel,Russia,Afghanistan\"] ],[\"gotMessage\",\"hi\"]] }";
 		try {
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 	        cArg[0] = String.class;
 			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
 			method.setAccessible(true);
 			method.invoke(service, jsonAnswer);
-			assertTrue(service.getMsgs().contains("hi"));
+			assertTrue(service.getMsgs().contains("hi") && service.getMsgs().size() == 1);
 			assertTrue(service.getLikes().contains("Israel")&&service.getLikes().contains("Russia")&&service.getLikes().contains("Afghanistan"));
 			//assertTrue(findEvent(service, ServerConstants.EVENT_GOTMESSAGE));
 			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 	
 	@Test
@@ -96,18 +93,19 @@ public class ServiceTester {
 		
 		String jsonAnswer = "[[connected],[\"gotMessage\",\"hi\"],[\"strangerDisconnected\"]]";
 		try {
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 	        cArg[0] = String.class;
 			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
 			method.setAccessible(true);
 			method.invoke(service, jsonAnswer);
 			assertTrue(service.getStatus().equals(ServerConstants.STATUS_OFFLINE));
-			assertTrue(service.getMsgs().contains("hi"));
+			assertTrue(service.getMsgs().isEmpty());
 			//assertTrue(findEvent(service, ServerConstants.EVENT_DISCONNECT));
 			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 	
 	@Test
@@ -117,7 +115,7 @@ public class ServiceTester {
 		
 		String jsonAnswer = "[[\"connected\"]]";
 		try {
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 	        cArg[0] = String.class;
 			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
 			method.setAccessible(true);
@@ -127,6 +125,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -135,7 +134,7 @@ public class ServiceTester {
 		
 		String jsonAnswer = "[[\"strangerDisconnected\"],[\"statusInfo\"]]";
 		try {
-			Class[] cArg = new Class[1];
+			Class<?>[] cArg = new Class[1];
 	        cArg[0] = String.class;
 			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
 			method.setAccessible(true);
@@ -145,6 +144,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -158,6 +158,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -170,7 +171,8 @@ public class ServiceTester {
 			assertTrue(mockService.getCurrEvent().equals(ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
-		} 
+		}
+		OmegleService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -184,5 +186,6 @@ public class ServiceTester {
 		} catch (Exception e) {
 			System.out.println("Unreachable state!");
 		} 
+		OmegleService.destroy();
 	}
 }

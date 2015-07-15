@@ -25,7 +25,7 @@ public class OmegleService {
 	private static Thread main = null;
 	private static ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	private static String likes = "";
-	private static int timeouts = 0;
+	private static int timeouts = -1;
 	
 	/**
 	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
@@ -51,6 +51,7 @@ public class OmegleService {
 			OmegleService.main = new Thread(new Runnable() {			
 				@Override
 				public void run() {
+					timeouts++;
 					while (status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
 					{
 						pollEvent();
@@ -87,6 +88,9 @@ public class OmegleService {
 		return currEvents.poll();
 	}
 
+	public int getTimeouts() {
+		return timeouts;
+	}
 	/**
 	 *  Poll for an event. Done by performing POST request to Omegle. 
 	 * 	If there's an active event it'll be inserted into the queue, otherwise nothing happens
@@ -116,7 +120,7 @@ public class OmegleService {
 				conn = (HttpURLConnection) url.openConnection();
 				setHeaders(conn,endPoint,"42");
 				conn.setDoOutput(true);
-				conn.setReadTimeout(7000);
+				conn.setReadTimeout(6000);
 				os = conn.getOutputStream();
 				String toSend = String.join("=", "id",clientId);
 				if (msg != null)
@@ -187,7 +191,8 @@ public class OmegleService {
 			activate();
 		}
 		if (retrieveConnAndLikes(json) != null) return ServerConstants.SUCCESS_MSG;
-		else return (retrieveEvent(json));
+		return null;
+		//else return (retrieveEvent(json));
 	}
 
 	/**
@@ -221,7 +226,6 @@ public class OmegleService {
 	private Object retrieveConnAndLikes(String json) 
 	{
 		JSONObject jsonobj = null;
-		JSONArray event = null;
 		JSONArray jsonarr = null;
 		try {
 			jsonobj = new JSONObject(json);
@@ -259,6 +263,7 @@ public class OmegleService {
 				destroy();
 				ret = event.get(0);
 			}
+			if (ret != null && timeouts > 0) timeouts--;
 		}
 		return ret;
 	}
@@ -293,7 +298,7 @@ public class OmegleService {
 	 * 
 	 * 	@param json
 	 * 	@return null if unsuccessful or the event
-	 */
+	 
 	private String retrieveEvent(String json) {
 		JSONArray jsonobj = null;
 		Object ret = null;
@@ -309,8 +314,9 @@ public class OmegleService {
 		} catch (JSONException e) {
 			return null;
 		}
+		if (timeouts > 0) timeouts--;
 		return (String) ret;
-	}
+	}*/
 	/**
 	 * 	Destroying this service -
 	 * 		Interrupt the polling mechanism and nullify the main and service components.
@@ -322,7 +328,9 @@ public class OmegleService {
 			OmegleService.main.interrupt();
 			OmegleService.main = null;
 		}
-		OmegleService.timeouts = 0;
+		OmegleService.timeouts = -1;
 		OmegleService.service = null;
+		OmegleService.msgs.clear();
+		OmegleService.currEvents.clear();
 	}
 }

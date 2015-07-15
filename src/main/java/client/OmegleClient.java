@@ -57,7 +57,7 @@ public class OmegleClient extends Application {
 	    public void start(Stage primaryStage) {
 	        primaryStage.setTitle("Omegle");   
 	        primaryStage.setResizable(false);
-	        setupStatusLabel(StrangerStatus);
+	        setupStatusLabel();
 	        onDisconnect();
 	        chat.setStyle("-fx-border-color: red;-fx-background-color: white;");
 	        chat.setPrefSize(400, 200);
@@ -123,7 +123,7 @@ public class OmegleClient extends Application {
 	            		isTyping = false;
 	            		timeline = new Timeline(new KeyFrame(Duration.seconds(1), ev -> {
 	            			try {
-								Thread.sleep(150);
+								Thread.sleep(500);
 							} catch (InterruptedException e) {
 								//e.printStackTrace();
 							}
@@ -151,7 +151,8 @@ public class OmegleClient extends Application {
 						    	}
 						    	if (!currEvent.startsWith(ClientConstants.EVENT_TYPING)) currEvent = "";
 						    }
-	            	    }));
+						    updateStatusLabel(service.getTimeouts());
+	            	    }));	
 	            	    timeline.setCycleCount(Animation.INDEFINITE);
 	            	    timeline.play();
 	            	}
@@ -401,8 +402,9 @@ public class OmegleClient extends Application {
 			interests.setEditable(true);
 			interestsIndices.clear();
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_OFFLINE);
+			updateStatusLabel(10);
 			if (service != null) {
-				service.destroy();
+				OmegleService.destroy();
 				//service = null;
 			}
 			onConnectButtonAction();
@@ -430,14 +432,40 @@ public class OmegleClient extends Application {
 		 * 		The Label containing the status of the counterpart
 		 * 		@param lowerpane - the panel we're adding elements to
 		 */
-		private void setupStatusLabel(Label status) {
-			status.setStyle("-fx-border-color: black; "
-					+ "-fx-font: 16px \"Serif\"; "
-					+ "-fx-fill: #818181;"
-					+ "-fx-effect: innershadow( three-pass-box , rgba(0,0,0,0.7) , 6, 0.0 , 0 , 2 );");
-	        status.setDisable(true);
-	        status.setAlignment(Pos.CENTER);
-	        status.setPrefWidth(200);
+		private void setupStatusLabel() {
+			StrangerStatus.setStyle("-fx-background-color: #FF0000;"
+					+ "-fx-border-color: black; "
+					+ "-fx-text-fill: black;"
+					+ "-fx-font: bold 16px \"Verdana\"; "
+					+ "-fx-stroke: black;"
+					);
+			//StrangerStatus.setDisable(true);
+			StrangerStatus.setAlignment(Pos.CENTER);
+			StrangerStatus.setPrefWidth(200);
+			Tooltip toolTip = new Tooltip();
+			toolTip.setText("Stranger Status and Connectivity Color");
+			String img = ClientConstants.RESOURCES+"RedGreen.png";
+			InputStream in = getClass().getClassLoader().getResourceAsStream(img);
+			Image image = new Image(in);
+			toolTip.setGraphic(new ImageView(image));
+			StrangerStatus.setTooltip(toolTip);
+		}
+		
+
+		private void updateStatusLabel(int timeouts) {	
+			String hex = "";
+			if (timeouts == -1) hex = "#FF0000;";
+			else hex = String.format( "#%02X%02X%02X;",
+		            (int)(timeouts*25),
+		            (int)((10-timeouts)*25),
+		            (int)(0) );
+			
+			StrangerStatus.setStyle("-fx-background-color: "+hex
+					+ "-fx-border-color: black; "
+					+ "-fx-text-fill: black;"
+					+ "-fx-font: bold 16px \"Verdana\"; "
+					+ "-fx-stroke: black;"
+					);
 		}
 
 		/**
