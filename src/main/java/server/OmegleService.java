@@ -8,6 +8,8 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,7 +22,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class OmegleService {
 	private static OmegleService service = null;
 	private static String clientId = "";
-	private static ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();;
+	private static ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();
 	private static String status = ServerConstants.STATUS_OFFLINE;
 	private static Thread main = null;
 	private static ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
@@ -96,10 +98,15 @@ public class OmegleService {
 	 * 	If there's an active event it'll be inserted into the queue, otherwise nothing happens
 	 */
 	private void pollEvent() {	
-		String event = "";
 		if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
-			if ( (event = sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)) != null) 
-				currEvents.add(event);
+		{
+			ArrayList<String> events = (ArrayList<String>) sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);
+			if (events != null) 
+			{
+				for (String s : events)
+					currEvents.add(s);
+			}
+		}
 	}
 	/**
 	 * Send an HTTP request to an Omegle endpoint. Use clientID and attach message if exists. Forward the response to methods ProcessJson or ProcessText accordingly
@@ -109,7 +116,7 @@ public class OmegleService {
 	 * @return the possible return values are as described in ProcessJson and ProcessText
 	 */
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
-	public String sendOmegleHttpRequest(String endPoint, String msg)
+	public Object sendOmegleHttpRequest(String endPoint, String msg)
 	{
 			URL url = null;
 			HttpURLConnection conn = null;
@@ -140,7 +147,7 @@ public class OmegleService {
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (SocketTimeoutException e) {
-				System.out.println("Timedout!");
+				//System.out.println("Timedout!");
 				OmegleService.timeouts++;
 				if (timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
 			} catch (IOException e) {
@@ -156,7 +163,7 @@ public class OmegleService {
 	 * 	@return Success message if the request was successful, otherwise null
 	 */
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
-	private String processText(String url, String text) 
+	private Object processText(String url, String text) 
 	{
 		if (text.equals(ServerConstants.SUCCESS_MSG))
 		{
@@ -170,7 +177,10 @@ public class OmegleService {
 				status = ServerConstants.STATUS_ONLINE;
 				activate();
 			}		
-			return ServerConstants.SUCCESS_MSG;
+			ArrayList<String> list = new ArrayList<String>() {{
+			    add(ServerConstants.SUCCESS_MSG);
+			}};
+			return list;
 		}	
 		return null;
 	}
@@ -181,7 +191,7 @@ public class OmegleService {
 	 * @return Success message or as described in retrieveEvent
 	 */
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
-	private String processJson(String json) 
+	private Object processJson(String json) 
 	{
 		String client = "";
 		if ((client = retrieveClientId(json)) != null)
@@ -190,9 +200,7 @@ public class OmegleService {
 			clientId = client;
 			activate();
 		}
-		if (retrieveConnAndLikes(json) != null) return ServerConstants.SUCCESS_MSG;
-		return null;
-		//else return (retrieveEvent(json));
+		return retrieveConnAndLikes(json);
 	}
 
 	/**
@@ -244,28 +252,29 @@ public class OmegleService {
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private Object handleJsonEvents(JSONArray array) throws JSONException {
 		JSONArray event;
-		Object ret = null;
+		List<Object> events = new ArrayList<>();
 		for (int i=0; i<array.length(); i++)
 		{
 			event = (JSONArray) array.get(i);
+			events.add(event.get(0));
 			if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
 			{
 				status = ServerConstants.STATUS_ONLINE;
-				ret = event.get(0);
 			}
 			if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
 				retrieveLikes(event);
 			if (event.get(0).equals(ServerConstants.EVENT_GOTMESSAGE))
+			{
 				msgs.add(event.getString(1));
+			}
 			if (event.get(0).equals(ServerConstants.EVENT_DISCONNECT))
 			{
 				status = ServerConstants.STATUS_OFFLINE;
 				destroy();
-				ret = event.get(0);
 			}
-			if (ret != null && timeouts > 0) timeouts--;
+			if (!events.isEmpty() && timeouts > 0) timeouts--;
 		}
-		return ret;
+		return events;
 	}
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private void retrieveLikes(JSONArray event) throws JSONException {
