@@ -35,5 +35,4 @@ Possibilities for enhancement:
 
 2) Add progress bar when searching for users with common interests.
 
-3) Support the reCaptcha service using JavaFX webpage rendering (when Omegle supports this). 
 
