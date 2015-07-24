@@ -1,3 +1,5 @@
+[![Travis CI](https://travis-ci.org/maxamel/DesktopOmegle.svg)](https://travis-ci.org/maxamel/DesktopOmegle)<br/>
+
 # DesktopOmegle
 
 A Desktop Application for the online chat Omegle. 
