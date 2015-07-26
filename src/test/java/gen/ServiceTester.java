@@ -26,8 +26,7 @@ public class ServiceTester {
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
 	public void testParseComplexConnected() {
-		OmegleService service = OmegleService.getInstance();
-		
+		OmegleService service = OmegleService.getInstance();		
 		String jsonAnswer = "{\"events\":[[\"waiting\"],[\"connected\"],[\"commonLikes\",[\"israel\"] ],[\"gotMessage\",\"hi\"]] }";
 		try {
 			Class<?>[] cArg = new Class[1];
@@ -37,10 +36,7 @@ public class ServiceTester {
 			method.invoke(service, jsonAnswer);
 			assertEquals(service.getLikes(),"israel");
 			assertTrue(service.getMsgs().contains("hi") && service.getMsgs().size() == 1);
-			//assertTrue(findEvent(service, ServerConstants.EVENT_GOTMESSAGE));
-			//assertTrue(findEvent(service, ServerConstants.EVENT_CONNECTED));
 		} catch (Exception e) {
-			e.printStackTrace();
 			fail(e.getMessage());
 		} 
 		OmegleService.destroy();
@@ -48,8 +44,7 @@ public class ServiceTester {
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
 	public void testParseSimpleMessage() {
-		OmegleService service = OmegleService.getInstance();
-		
+		OmegleService service = OmegleService.getInstance();	
 		String jsonAnswer = "[[\"gotMessage\",\"hi\"]] ";
 		try {
 			Class<?>[] cArg = new Class[1];
@@ -67,8 +62,7 @@ public class ServiceTester {
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
 	public void testParseManyLikes() {
-		OmegleService service = OmegleService.getInstance();
-		
+		OmegleService service = OmegleService.getInstance();		
 		String jsonAnswer =  "[[\"connected\"],[\"commonLikes\",[\"Israel,Russia,Afghanistan\"] ],[\"gotMessage\",\"hi\"]] }";
 		try {
 			Class<?>[] cArg = new Class[1];
@@ -87,8 +81,7 @@ public class ServiceTester {
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
 	public void testParseComplexDisconnection() {
-		OmegleService service = OmegleService.getInstance();
-		
+		OmegleService service = OmegleService.getInstance();	
 		String jsonAnswer = "[[connected],[\"gotMessage\",\"hi\"],[\"strangerDisconnected\"]]";
 		try {
 			Class<?>[] cArg = new Class[1];
@@ -107,8 +100,7 @@ public class ServiceTester {
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
 	public void testParseSimpleConnected() {
-		OmegleService service = OmegleService.getInstance();
-		
+		OmegleService service = OmegleService.getInstance();		
 		String jsonAnswer = "[[\"connected\"]]";
 		try {
 			Class<?>[] cArg = new Class[1];
@@ -188,4 +180,28 @@ public class ServiceTester {
 		} 
 		OmegleService.destroy();
 	}
+	@Test
+	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
+	public void testOmeglePersistence() {
+		OmegleService service = OmegleService.getInstance();
+		String jsonAnswer =  "[[\"connected\"],[\"commonLikes\",[\"Israel,Russia,Afghanistan\"] ],[\"gotMessage\",\"hi\"]] }";
+		try {
+			Class<?>[] cArg = new Class[1];
+	        cArg[0] = String.class;
+			Method method = service.getClass().getDeclaredMethod("processJson",cArg);
+			method.setAccessible(true);
+			method.invoke(service, jsonAnswer);
+			assertTrue(service.getMsgs().contains("hi") && service.getMsgs().size() == 1);
+			assertTrue(service.getLikes().contains("Israel")&&service.getLikes().contains("Russia")&&service.getLikes().contains("Afghanistan"));
+		} catch (Exception e) {
+			fail(e.getMessage());
+		} 
+		OmegleService.destroy();
+		service = OmegleService.getInstance();
+		assertTrue(service.getMsgs().isEmpty());
+		assertTrue(service.getLikes().isEmpty());
+		assertTrue(service.getStatus().equals(ServerConstants.STATUS_OFFLINE));
+		assertTrue(service.getTimeouts() == -1);
+	}
+	
 }

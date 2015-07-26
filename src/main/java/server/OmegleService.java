@@ -126,6 +126,7 @@ public class OmegleService {
 				url = new URL(endPoint);
 				conn = (HttpURLConnection) url.openConnection();
 				setHeaders(conn,endPoint,"42");
+				//conn.connect();
 				conn.setDoOutput(true);
 				conn.setReadTimeout(6000);
 				os = conn.getOutputStream();
@@ -142,6 +143,7 @@ public class OmegleService {
 				@SuppressWarnings("resource")
 				String res = new Scanner(is,"UTF-8").useDelimiter("\\A").next();
 				is.close();	
+				conn.disconnect();
 				if (res != null && conn.getRequestProperty("Accept").equals("application/json")) return processJson(res);
 				else return processText(endPoint,res);
 			} catch (MalformedURLException e) {
@@ -217,8 +219,8 @@ public class OmegleService {
 		conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded"); 
 		conn.setRequestProperty("Content-Length","42");
 		conn.setRequestProperty("Accept","text/plain");   
-		conn.setRequestProperty("Connection","keep-alive");
-		conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36");
+		conn.setRequestProperty("Connection","close");
+		//conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36");
 		conn.setRequestProperty("Origin", "http://www.omegle.com");
 		
 		if (urlSend.equals(ServerConstants.URL_EVENT) || urlSend.contains(ServerConstants.BASE_URL_BODY))conn.setRequestProperty("Accept","application/json");
@@ -341,5 +343,7 @@ public class OmegleService {
 		OmegleService.service = null;
 		OmegleService.msgs.clear();
 		OmegleService.currEvents.clear();
+		OmegleService.likes = "";
+		OmegleService.status = ServerConstants.STATUS_OFFLINE;
 	}
 }

@@ -122,11 +122,13 @@ public class OmegleClient extends Application {
 	            		onConnect();
 	            		isTyping = false;
 	            		timeline = new Timeline(new KeyFrame(Duration.seconds(1), ev -> {
+	            			//timeline.pause();
+	            			/*timeline.
 	            			try {
 								Thread.sleep(500);
 							} catch (InterruptedException e) {
 								//e.printStackTrace();
-							}
+							}*/
 	            			scrollDown();
 						    currEvent = service.getCurrEvent();
 						    if (currEvent != null) 
@@ -383,7 +385,6 @@ public class OmegleClient extends Application {
 	            		service.sendOmegleHttpRequest(ClientConstants.URL_DISCONNECT,null);//sendOmegleMsg(toSend);
 	            		isTyping = false;
 	            		chat.setText(chat.getText()+"\nYou Disconnected. "); 
-	            		timeline.stop();
 	            		onDisconnect();
 	            	}
 	            }	
@@ -395,6 +396,7 @@ public class OmegleClient extends Application {
 		 */
 		private void onDisconnect() {
 			send.setDisable(true);
+			if (timeline != null) timeline.stop();
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
 			chat.setStyle("-fx-border-color: red;");
 			interests.clearStyle(0, interests.getText().length());
