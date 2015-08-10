@@ -48,13 +48,13 @@ public class OmegleService {
 	 */
 	private synchronized void activate()
 	{
-		if (main == null && service != null)
+		if (OmegleService.main == null && OmegleService.service != null)
 		{
 			OmegleService.main = new Thread(new Runnable() {			
 				@Override
 				public void run() {
-					timeouts++;
-					while (status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
+					OmegleService.timeouts++;
+					while (OmegleService.status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
 					{
 						pollEvent();
 						String event = currEvents.peek();
@@ -98,7 +98,7 @@ public class OmegleService {
 	 * 	If there's an active event it'll be inserted into the queue, otherwise nothing happens
 	 */
 	private void pollEvent() {	
-		if (currEvents.isEmpty() || !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT)) 
+		if (currEvents.isEmpty() || (currEvents.peek() != null && !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT))) 
 		{
 			ArrayList<String> events = (ArrayList<String>) sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);
 			if (events != null) 
@@ -149,9 +149,8 @@ public class OmegleService {
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (SocketTimeoutException e) {
-				//System.out.println("Timedout!");
 				OmegleService.timeouts++;
-				if (timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
+				if (OmegleService.timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
 			} catch (IOException e) {
 				e.printStackTrace();
 			} 
@@ -167,7 +166,7 @@ public class OmegleService {
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private Object processText(String url, String text) 
 	{
-		if (text.equals(ServerConstants.SUCCESS_MSG))
+		if (text != null && text.equals(ServerConstants.SUCCESS_MSG))
 		{
 			if (url.equals(ServerConstants.URL_DISCONNECT)) 
 			{
@@ -198,9 +197,9 @@ public class OmegleService {
 		String client = "";
 		if ((client = retrieveClientId(json)) != null)
 		{
-			status = ServerConstants.STATUS_ONLINE;
+			//status = ServerConstants.STATUS_ONLINE;
 			clientId = client;
-			activate();
+			//activate();
 		}
 		return retrieveConnAndLikes(json);
 	}
@@ -220,7 +219,6 @@ public class OmegleService {
 		conn.setRequestProperty("Content-Length","42");
 		conn.setRequestProperty("Accept","text/plain");   
 		conn.setRequestProperty("Connection","close");
-		//conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36");
 		conn.setRequestProperty("Origin", "http://www.omegle.com");
 		
 		if (urlSend.equals(ServerConstants.URL_EVENT) || urlSend.contains(ServerConstants.BASE_URL_BODY))conn.setRequestProperty("Accept","application/json");
@@ -262,6 +260,7 @@ public class OmegleService {
 			if (event.get(0).equals(ServerConstants.EVENT_CONNECTED))
 			{
 				status = ServerConstants.STATUS_ONLINE;
+				activate();
 			}
 			if (event.get(0).equals(ServerConstants.EVENT_COMMONLIKES))
 				retrieveLikes(event);
@@ -280,11 +279,11 @@ public class OmegleService {
 	}
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private void retrieveLikes(JSONArray event) throws JSONException {
-		likes = "";
+		OmegleService.likes = "";
 		JSONArray array_of_likes = (JSONArray) event.get(1);
 		for (int j=0; j<array_of_likes.length()-1; j++)
-			likes += array_of_likes.get(j)+",";
-		likes += array_of_likes.get(array_of_likes.length()-1);
+			OmegleService.likes += array_of_likes.get(j)+",";
+		OmegleService.likes += array_of_likes.get(array_of_likes.length()-1);
 	}
 
 	/**
@@ -334,7 +333,7 @@ public class OmegleService {
 	 * 		After this the constructor needs to be called again to reactivate the service
 	 */
 	public static synchronized void destroy() {
-		if (main != null) 
+		if (OmegleService.main != null) 
 		{
 			OmegleService.main.interrupt();
 			OmegleService.main = null;
