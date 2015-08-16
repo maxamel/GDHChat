@@ -8,9 +8,14 @@ import org.fxmisc.richtext.InlineCssTextArea;
 
 import main.java.server.OmegleService;
 import javafx.animation.Animation;
+import javafx.animation.AnimationTimer;
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -45,6 +50,7 @@ public class OmegleClient extends Application {
 	private TextArea chat = new TextArea();
 	private InlineCssTextArea interests = new InlineCssTextArea();
 	private ArrayList<Integer> interestsIndices = new ArrayList<>();
+	private Stage stage;
 	    
 	public static void main(String[] args) {	    	
 	        launch(args);        
@@ -55,6 +61,7 @@ public class OmegleClient extends Application {
 		 */
 	    @Override
 	    public void start(Stage primaryStage) {
+	    	stage = primaryStage;
 	        primaryStage.setTitle("Omegle");   
 	        primaryStage.setResizable(false);
 	        setupStatusLabel();
@@ -118,17 +125,8 @@ public class OmegleClient extends Application {
 	            	if (service != null)
 	            	{
 	            		connectWithInterests();
-	            		chat.setText("Connected.");
-	            		onConnect();
 	            		isTyping = false;
-	            		timeline = new Timeline(new KeyFrame(Duration.seconds(1), ev -> {
-	            			//timeline.pause();
-	            			/*timeline.
-	            			try {
-								Thread.sleep(500);
-							} catch (InterruptedException e) {
-								//e.printStackTrace();
-							}*/
+	            		timeline = new Timeline(new KeyFrame(Duration.seconds(0.1), ev -> {
 	            			scrollDown();
 						    currEvent = service.getCurrEvent();
 						    if (currEvent != null) 
@@ -167,27 +165,64 @@ public class OmegleClient extends Application {
 		 * 		Otherwise connect normally.  
 		 */
 		private synchronized void  connectWithInterests(){
-			String urlConn = ClientConstants.URL_CONNECT;
-        	if (getInterests().size() > 0) urlConn = String.format(ClientConstants.URL_CONNECT_INTERESTS,processInterests(getInterests()));
-			try
-			{
-				boolean connected = false;
-				long start = System.currentTimeMillis();
-				long end = (long) (start + Duration.seconds(5).toMillis());
-				while (System.currentTimeMillis() < end) {
-				    wait(1000);
-				    if (service.sendOmegleHttpRequest(urlConn, null) != null) 
-				    {
-				    	connected = true;
-				    	break;
-				    }
+			Task<Void> task1 = new Task<Void>() {
+				@Override
+				protected Void call() throws Exception {
+					String urlConn = ClientConstants.URL_CONNECT;
+		        	if (getInterests().size() > 0) urlConn = String.format(ClientConstants.URL_CONNECT_INTERESTS,processInterests(getInterests()));
+					try
+					{
+						boolean connected = false;
+						long start = System.currentTimeMillis();
+						long end = (long) (start + Duration.seconds(5).toMillis());
+						while (System.currentTimeMillis() < end) {
+						    Thread.sleep(1000);
+						    if (service != null && service.sendOmegleHttpRequest(urlConn, null) != null && service.getStatus().equals(ClientConstants.STATUS_ONLINE)) 
+						    {
+						    	connected = true;
+						    	break;
+						    }
+						}
+						if (!connected) service.sendOmegleHttpRequest(ClientConstants.URL_STOPSEARCH, null);
+					}
+					catch(InterruptedException e)
+					{
+						e.printStackTrace();
+					}
+					return null;
 				}
-				if (!connected) service.sendOmegleHttpRequest(ClientConstants.URL_STOPSEARCH, null);
-			}
-			catch(InterruptedException e)
-			{
-				e.printStackTrace();
-			}
+			};	
+			Task<Void> task = new Task<Void>() {
+				@Override
+				protected Void call() throws Exception {
+					FadeTransition ft = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
+					ft.setFromValue(1.0);
+					ft.setToValue(0.1);
+					ft.setCycleCount(1);
+					ft.play();
+					ft.setOnFinished(new EventHandler<ActionEvent>() {
+					    @Override
+					    public void handle(ActionEvent event) {
+					    	new Thread(task1).start();
+					    }
+					});
+					
+					return null;
+				}
+			};
+			task1.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+				@Override
+				public void handle(WorkerStateEvent paramT) {
+					FadeTransition ft1 = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
+					ft1.setFromValue(0.1);
+					ft1.setToValue(1.0);
+					ft1.setCycleCount(1);
+					ft1.play();
+					chat.setText("Connected.");
+            		onConnect();
+				}
+			});
+			new Thread(task).start();
 		}
 		
 		/**
