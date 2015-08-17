@@ -21,13 +21,13 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class OmegleService {
 	private static OmegleService service = null;
-	private static String clientId = "";
-	private static ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();
-	private static String status = ServerConstants.STATUS_OFFLINE;
-	private static Thread main = null;
-	private static ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
-	private static String likes = "";
-	private static int timeouts = -1;
+	private String clientId = "";
+	private ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();
+	private String status = ServerConstants.STATUS_OFFLINE;
+	private Thread main = null;
+	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
+	private String likes = "";
+	private int timeouts = -1;
 	
 	/**
 	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
@@ -46,15 +46,15 @@ public class OmegleService {
 	/**
 	 * 	Activation of the service itself. Polls Omegle every second for an event.  
 	 */
-	private synchronized void activate()
+	private void activate()
 	{
-		if (OmegleService.main == null && OmegleService.service != null)
+		if (main == null && service != null)
 		{
-			OmegleService.main = new Thread(new Runnable() {			
+			main = new Thread(new Runnable() {			
 				@Override
 				public void run() {
-					OmegleService.timeouts++;
-					while (OmegleService.status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
+					timeouts++;
+					while (status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
 					{
 						pollEvent();
 						String event = currEvents.peek();
@@ -71,7 +71,7 @@ public class OmegleService {
 					}
 				}
 			});	
-			OmegleService.main.start();
+			main.start();
 		}
 	}
 	public ConcurrentLinkedQueue<String> getMsgs() {
@@ -115,7 +115,6 @@ public class OmegleService {
 	 * @param msg - the contents of the message
 	 * @return the possible return values are as described in ProcessJson and ProcessText
 	 */
-	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	public Object sendOmegleHttpRequest(String endPoint, String msg)
 	{
 			URL url = null;
@@ -149,8 +148,8 @@ public class OmegleService {
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (SocketTimeoutException e) {
-				OmegleService.timeouts++;
-				if (OmegleService.timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
+				timeouts++;
+				if (timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
 			} catch (IOException e) {
 				e.printStackTrace();
 			} 
@@ -163,7 +162,6 @@ public class OmegleService {
 	 * 	@param text - the response text
 	 * 	@return Success message if the request was successful, otherwise null
 	 */
-	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private Object processText(String url, String text) 
 	{
 		if (text != null && text.equals(ServerConstants.SUCCESS_MSG))
@@ -191,7 +189,6 @@ public class OmegleService {
 	 * @param the response in json format
 	 * @return Success message or as described in retrieveEvent
 	 */
-	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private Object processJson(String json) 
 	{
 		String client = "";
@@ -249,7 +246,6 @@ public class OmegleService {
 			}
 		}
 	}
-	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private Object handleJsonEvents(JSONArray array) throws JSONException {
 		JSONArray event;
 		List<Object> events = new ArrayList<>();
@@ -277,13 +273,12 @@ public class OmegleService {
 		}
 		return events;
 	}
-	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	private void retrieveLikes(JSONArray event) throws JSONException {
-		OmegleService.likes = "";
+		likes = "";
 		JSONArray array_of_likes = (JSONArray) event.get(1);
 		for (int j=0; j<array_of_likes.length()-1; j++)
-			OmegleService.likes += array_of_likes.get(j)+",";
-		OmegleService.likes += array_of_likes.get(array_of_likes.length()-1);
+			likes += array_of_likes.get(j)+",";
+		likes += array_of_likes.get(array_of_likes.length()-1);
 	}
 
 	/**
@@ -332,17 +327,18 @@ public class OmegleService {
 	 * 		Interrupt the polling mechanism and nullify the main and service components.
 	 * 		After this the constructor needs to be called again to reactivate the service
 	 */
-	public static synchronized void destroy() {
-		if (OmegleService.main != null) 
+	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+	public void destroy() {
+		if (main != null) 
 		{
-			OmegleService.main.interrupt();
-			OmegleService.main = null;
+			main.interrupt();
+			main = null;
 		}
-		OmegleService.timeouts = -1;
+		timeouts = -1;
 		OmegleService.service = null;
-		OmegleService.msgs.clear();
-		OmegleService.currEvents.clear();
-		OmegleService.likes = "";
-		OmegleService.status = ServerConstants.STATUS_OFFLINE;
+		msgs.clear();
+		currEvents.clear();
+		likes = "";
+		status = ServerConstants.STATUS_OFFLINE;
 	}
 }

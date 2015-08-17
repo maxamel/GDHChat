@@ -39,7 +39,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -56,7 +56,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 	}
 	
 	@Test
@@ -75,7 +75,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 	}
 	
 	@Test
@@ -94,7 +94,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 	}
 	
 	@Test
@@ -112,7 +112,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -130,7 +130,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -146,7 +146,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		mockService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -162,7 +162,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
-		OmegleService.destroy();
+		mockService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -178,7 +178,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		mockService.destroy();
 	}
 	@Test
 	@SuppressFBWarnings(value="REC_CATCH_EXCEPTION")
@@ -196,7 +196,7 @@ public class ServiceTester {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		} 
-		OmegleService.destroy();
+		service.destroy();
 		service = OmegleService.getInstance();
 		assertTrue(service.getMsgs().isEmpty());
 		assertTrue(service.getLikes().isEmpty());

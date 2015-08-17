@@ -441,7 +441,7 @@ public class OmegleClient extends Application {
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_OFFLINE);
 			updateStatusLabel(10);
 			if (service != null) {
-				OmegleService.destroy();
+				service.destroy();
 				//service = null;
 			}
 			onConnectButtonAction();
