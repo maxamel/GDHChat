@@ -16,6 +16,8 @@ I hope someone will find this useful.
 
 The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. I had second thoughts before releasing this code since it could be used to write botnets (which Omegle is already full of), but when I found out Omegle was implementing reCaptcha to fight bots I decided it was OK. 
 
+Supports auto disconnection upon discovering bad connectivity. The connectivity is indicated by the color on the status of your conversation counterpart, so the disconnection won't come as a surprise.  
+
 #Testing
 
 The application was mostly tested manually, there a few unit tests for the Service module. 
@@ -35,6 +37,6 @@ Possibilities for enhancement:
 
 1) Write tests for server+client modules.
 
-2) Add progress bar when searching for users with common interests.
+2) Add progress bar when searching for users with common interests. Currently fade out is supported when connecting.
 
 
