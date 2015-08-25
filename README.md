@@ -5,6 +5,8 @@
 A Desktop Application for the online chat Omegle. 
 
 Currenlty supports just the basic feature of chatting with random strangers or with strangers with similar interests.
+A new enhancement is the auto disconnection upon discovering bad connectivity. The connectivity level is estimated by the number of timeouts during the conversation. After ten consecutive timeouts the connection is broken off. The connectivity is indicated by the color on the status of your conversation counterpart, so the disconnection won't come as a surprise.  
+
 
 # Overview
 
@@ -15,8 +17,6 @@ The intention was to make a software project which would follow the high-cohesio
 I hope someone will find this useful.
 
 The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. I had second thoughts before releasing this code since it could be used to write botnets (which Omegle is already full of), but when I found out Omegle was implementing reCaptcha to fight bots I decided it was OK. 
-
-Supports auto disconnection upon discovering bad connectivity. The connectivity is indicated by the color on the status of your conversation counterpart, so the disconnection won't come as a surprise.  
 
 #Testing
 
