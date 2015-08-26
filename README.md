@@ -10,7 +10,6 @@ A new enhancement is the auto disconnection upon discovering bad connectivity. T
 
 # Overview
 
-This was written mainly as a learning experience. 
 After developing with Java Swing for many years I wanted to explore the possibilities of JavaFX, and I'm grateful I did. A whole new world was uncovered before my eyes.
 The intention was to make a software project which would follow the high-cohesion, low-coupling principle. If anyone has doubts or questions regarding the design and code please raise an issue, I'd be happy to hear.
 
@@ -18,10 +17,12 @@ I hope someone will find this useful.
 
 The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. I had second thoughts before releasing this code since it could be used to write botnets (which Omegle is already full of), but when I found out Omegle was implementing reCaptcha to fight bots I decided it was OK. 
 
-#Testing
+#Testing and Code Quality
 
 The application was mostly tested manually, there a few unit tests for the Service module. 
 Currently writing further tests is the top priority. 
+Code quality is maintained by using static analysis tools: FindBugs and Coverity.
+During every build process gradle runs findbugs to check for defects. Every now and then I also upload the project to the Coverity site to run a full scan. In the future, this process can be automated by configuring Travis CI to run Coverity every build.
 
 # Prerequisites
 
