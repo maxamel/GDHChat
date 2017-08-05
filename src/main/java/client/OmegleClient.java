@@ -35,6 +35,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -46,6 +47,8 @@ public class OmegleClient extends Application {
 	private Button send = new Button();
 	private Label lbl = new Label();
 	private Label StrangerStatus = new Label();
+	private Button toggleAutoDisconnection = new Button();
+	private boolean isAutoDisconnection = true;
 	private Button connection = new Button();
 	private TextArea chat = new TextArea();
 	private InlineCssTextArea interests = new InlineCssTextArea();
@@ -65,6 +68,7 @@ public class OmegleClient extends Application {
 	        primaryStage.setTitle("Omegle");   
 	        primaryStage.setResizable(false);
 	        setupStatusLabel();
+	        setupToggleAutoDisconnection();
 	        onDisconnect();
 	        chat.setStyle("-fx-border-color: red;-fx-background-color: white;");
 	        chat.setPrefSize(400, 200);
@@ -103,7 +107,27 @@ public class OmegleClient extends Application {
 	        primaryStage.setScene(new Scene(root, 600, 600));
 	        primaryStage.show();
 	    }
-	    /**
+	    private void setupToggleAutoDisconnection() {
+	    	toggleAutoDisconnection.setPrefSize(125, 25);
+	    	toggleAutoDisconnection.setText("Auto-Disconnection");
+	    	Tooltip toolTip = new Tooltip();
+			toolTip.setText("Auto-Disconnection on bad connectivity");
+			toggleAutoDisconnection.setTooltip(toolTip);
+			toggleAutoDisconnection.setTextFill(Paint.valueOf("LIGHTGREEN"));
+	    	toggleAutoDisconnection.setOnAction(new EventHandler<ActionEvent>() {
+	       	 
+	            @Override
+	            public void handle(ActionEvent event) {
+	            	isAutoDisconnection = !isAutoDisconnection;
+	            	if (!isAutoDisconnection) 
+	            		toggleAutoDisconnection.setTextFill(Paint.valueOf("RED"));
+	            	else
+	            		toggleAutoDisconnection.setTextFill(Paint.valueOf("LIGHTGREEN"));
+	            		//toggleAutoDisconnection.setStyle("-fx-font: 15px \"Serif\"; ");
+	            }});
+		}
+
+		/**
 	     *  Scroll down the chat box - called after every incoming message so the user will see the most recent message.
 	     * 
 	     */
@@ -546,8 +570,10 @@ public class OmegleClient extends Application {
 		private void setupUpperPane(GridPane upperPane) {
 			upperPane.setAlignment(Pos.CENTER);
 			Label stranger = new Label("Stranger Status: ");
+			upperPane.setHgap(10);
 	        upperPane.add(stranger, 0, 0);
 	        upperPane.add(StrangerStatus, 1, 0);
+	        upperPane.add(toggleAutoDisconnection, 2, 0);
 		}
 
 

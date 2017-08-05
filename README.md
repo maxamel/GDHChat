@@ -17,7 +17,7 @@ I hope someone will find this useful.
 
 The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. I had second thoughts before releasing this code since it could be used to write botnets (which Omegle is already full of), but when I found out Omegle was implementing reCaptcha to fight bots I decided it was OK. 
 
-#Testing and Code Quality
+# Testing and Code Quality
 
 The application was mostly tested manually, there a few unit tests for the Service module. 
 Currently writing further tests is the top priority. 
