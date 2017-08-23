@@ -11,10 +11,10 @@ A new enhancement is the auto disconnection upon discovering bad connectivity. Y
 
 # Overview
 
-After developing with Java Swing for many years I wanted to explore the possibilities of JavaFX, and I'm grateful I did. It's a pwerful and flexible framework.
+After developing with Java Swing for many years I wanted to explore the possibilities of JavaFX, and I'm grateful I did. It's a powerful and flexible framework.
 The intention was to make a software project which would follow the high-cohesion, low-coupling principle. If anyone has doubts or questions regarding the design and code please raise an issue, I'd be happy to hear.
 
-I hope someone will find this useful.
+I hope someone will find this useful. I'm interested in adding features which are not present in the original Omegle website, so any ideas are welcome.
 
 The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. 
 
