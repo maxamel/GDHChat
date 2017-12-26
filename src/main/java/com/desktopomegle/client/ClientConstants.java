@@ -6,7 +6,7 @@ public class ClientConstants {
 	public final static String STRANGER_STATUS_IDLE = "Idle";
 	public final static String STRANGER_STATUS_TYPING = "Typing...";
 	
-	public final static String BASE_URL = "http://front1.omegle.com/";
+	public final static String BASE_URL = "https://front16.omegle.com/";
 	public final static String BASE_URL_SUFFIX = "&lang=en";
 	public final static String BASE_URL_BODY = "start?rcs=1&firstevents=1&spid=&randid=3EV6ABEE";
 	public final static String URL_CONNECT = BASE_URL+BASE_URL_BODY+BASE_URL_SUFFIX;
