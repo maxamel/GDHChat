@@ -1,4 +1,4 @@
-package main.java.client;
+package com.desktopomegle.client;
 
 public class ClientConstants {
 

@@ -1,4 +1,4 @@
-package main.java.server;
+package com.desktopomegle.server;
 
 import java.io.IOException;
 import java.io.InputStream;

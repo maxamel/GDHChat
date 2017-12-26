@@ -1,4 +1,4 @@
-package main.java.server;
+package com.desktopomegle.server;
 
 public class ServerConstants {
 

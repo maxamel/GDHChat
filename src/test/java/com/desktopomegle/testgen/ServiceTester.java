@@ -1,12 +1,12 @@
-package test.java.gen;
+package com.desktopomegle.testgen;
 
 import static org.junit.Assert.*;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import main.java.server.OmegleService;
-import main.java.server.ServerConstants;
+import com.desktopomegle.server.OmegleService;
+import com.desktopomegle.server.ServerConstants;
 
 import org.junit.Test;
 import org.mockito.Mockito;

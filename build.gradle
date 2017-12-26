@@ -3,6 +3,10 @@ apply plugin: 'findbugs'
   findbugs {
   toolVersion = "3.0.0"
 }
+
+sourceCompatibility = '1.8'
+
+libsDirName = '.'
 version = '1.3'
 archivesBaseName = 'DesktopOmegle'
 repositories {
@@ -10,9 +14,13 @@ repositories {
 	maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/' 
     }
+    flatDir {
+        dirs 'lib'
+    }
 }
+
 dependencies {
-    	compile 'org.json:json:20090211'
+    compile 'org.json:json:20090211'
 	compile 'org.fxmisc.richtext:richtextfx:0.6.4'
 	compile 'org.reactfx:reactfx:2.0-M4'
 	compile 'org.fxmisc.flowless:flowless:0.4.4'
@@ -22,27 +30,21 @@ dependencies {
 	compile 'junit:junit:4.12'
 	compile 'org.mockito:mockito-all:2.0.2-beta'
 	compile 'org.powermock:powermock-mockito-release-full:1.6.2'
+	compile files('lib/jfxrt.jar')
 }
  clean{
-    	delete "/lib"
-	delete "/bin"
+	delete "bin/"
+	delete "build/"
 }
+
 jar {
-	dependsOn configurations.runtime
-	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+	dependsOn configurations.compile
+	from { configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest {
-        attributes 'Main-Class': 'main.java.client.OmegleClient'
+        attributes 'Implementation-Title': 'DesktopOmegle',
+        	'Main-Class': 'com.desktopomegle.client.OmegleClient'
     }
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
 }
-task copyDeps(type: Copy) {
-  from configurations.runtime
-  into 'lib'
-  rename { String fileName ->
-        fileName.replace('-20090211', '')
-    }
-}
-task deleteBuildTmp(type: Delete) {
-	delete "build/tmp" 
-  }
-build.dependsOn(deleteBuildTmp)
-deleteBuildTmp.dependsOn(copyDeps)

@@ -1,4 +1,4 @@
-package main.java.client;
+package com.desktopomegle.client;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -6,14 +6,12 @@ import java.util.List;
 
 import org.fxmisc.richtext.InlineCssTextArea;
 
-import main.java.server.OmegleService;
+import com.desktopomegle.server.OmegleService;
 import javafx.animation.Animation;
-import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
@@ -368,8 +366,8 @@ public class OmegleClient extends Application {
 		}
 
 		/**
-		 * 		Update the connection button according to the server status
-		 * 		@param status - the current server status 
+		 * 		Update the connection button according to the com.desktopomegle.server status
+		 * 		@param status - the current com.desktopomegle.server status 
 		 */
 		private void updateConnectionButton(String status) {
 			String img = "";
