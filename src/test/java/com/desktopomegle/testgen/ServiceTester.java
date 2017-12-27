@@ -138,7 +138,7 @@ public class ServiceTester {
 		OmegleService mockService = Mockito.spy(OmegleService.getInstance());
 		ArrayList<String> list = new ArrayList<String>() ;
 		list.add(ServerConstants.EVENT_DISCONNECT);
-		when(mockService.sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)).thenReturn(list);
+		when(mockService.sendOmegleMult(ServerConstants.URL_EVENT, null)).thenReturn(list);
 		when(mockService.getCurrEvent()).thenCallRealMethod();
 		try {
 			org.powermock.reflect.Whitebox.invokeMethod(mockService, "pollEvent");
@@ -154,7 +154,7 @@ public class ServiceTester {
 		OmegleService mockService = Mockito.spy(OmegleService.getInstance());
 		ArrayList<String> list = new ArrayList<String>() ;
 		list.add(ServerConstants.EVENT_CONNECTED);
-		when(mockService.sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)).thenReturn(list);
+		when(mockService.sendOmegleMult(ServerConstants.URL_EVENT, null)).thenReturn(list);
 		when(mockService.getCurrEvent()).thenCallRealMethod();
 		try {
 			org.powermock.reflect.Whitebox.invokeMethod(mockService, "pollEvent");
@@ -170,7 +170,7 @@ public class ServiceTester {
 		OmegleService mockService = Mockito.spy(OmegleService.getInstance());
 		ArrayList<String> list = new ArrayList<String>() ;
 		list.add(ServerConstants.EVENT_GOTMESSAGE);
-		when(mockService.sendOmegleHttpRequest(ServerConstants.URL_EVENT, null)).thenReturn(list);
+		when(mockService.sendOmegleMult(ServerConstants.URL_EVENT, null)).thenReturn(list);
 		when(mockService.getCurrEvent()).thenCallRealMethod();
 		try {
 			org.powermock.reflect.Whitebox.invokeMethod(mockService, "pollEvent");

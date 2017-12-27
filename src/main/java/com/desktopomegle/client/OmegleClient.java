@@ -199,13 +199,13 @@ public class OmegleClient extends Application {
 						long end = (long) (start + Duration.seconds(5).toMillis());
 						while (System.currentTimeMillis() < end) {
 						    Thread.sleep(1000);
-						    if (service != null && service.sendOmegleHttpRequest(urlConn, null) != null && service.getStatus().equals(ClientConstants.STATUS_ONLINE)) 
+						    if (service != null && service.sendOmegleMult(urlConn, null) != null && service.getStatus().equals(ClientConstants.STATUS_ONLINE)) 
 						    {
 						    	connected = true;
 						    	break;
 						    }
 						}
-						if (!connected) service.sendOmegleHttpRequest(ClientConstants.URL_STOPSEARCH, null);
+						if (!connected) service.sendOmegleMult(ClientConstants.URL_STOPSEARCH, null);
 					}
 					catch(InterruptedException e)
 					{
@@ -401,7 +401,7 @@ public class OmegleClient extends Application {
 				public void handle(Event arg0) {
 					if (!isTyping && service != null)
 					{
-						service.sendOmegleHttpRequest(ClientConstants.URL_TYPING, null);//sendOmegleTypeSignal();
+						service.sendOmegleMult(ClientConstants.URL_TYPING, null);//sendOmegleTypeSignal();
 						isTyping = true;
 					}
 				}
@@ -420,7 +420,7 @@ public class OmegleClient extends Application {
 	            	String toSend = area.getText();
 	            	if (!toSend.isEmpty() && service != null)
 	            	{
-	            		service.sendOmegleHttpRequest(ClientConstants.URL_SEND, toSend);//sendOmegleMsg(toSend);
+	            		service.sendOmegleMult(ClientConstants.URL_SEND, toSend);//sendOmegleMsg(toSend);
 	            		isTyping = false;
 	            		chat.setText(chat.getText()+"\nYou: "+toSend);
 	            		area.setText("");
@@ -439,7 +439,7 @@ public class OmegleClient extends Application {
 	            public void handle(ActionEvent event) {
 	            	if (service != null)
 	            	{	            		
-	            		service.sendOmegleHttpRequest(ClientConstants.URL_DISCONNECT,null);//sendOmegleMsg(toSend);
+	            		service.sendOmegleMult(ClientConstants.URL_DISCONNECT,null);//sendOmegleMsg(toSend);
 	            		isTyping = false;
 	            		chat.setText(chat.getText()+"\nYou Disconnected. "); 
 	            		onDisconnect();

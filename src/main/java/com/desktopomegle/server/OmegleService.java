@@ -28,6 +28,7 @@ public class OmegleService {
 	private ConcurrentLinkedQueue<String> msgs = new ConcurrentLinkedQueue<String>();
 	private String likes = "";
 	private int timeouts = -1;
+	private int front = -1;
 	
 	/**
 	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
@@ -100,7 +101,13 @@ public class OmegleService {
 	private void pollEvent() {	
 		if (currEvents.isEmpty() || (currEvents.peek() != null && !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT))) 
 		{
-			ArrayList<String> events = (ArrayList<String>) sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);
+			ArrayList<String> events = null;
+			try {
+				events = (ArrayList<String>) sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			if (events != null) 
 			{
 				for (String s : events)
@@ -109,13 +116,47 @@ public class OmegleService {
 		}
 	}
 	/**
+	 * 
+	 * @return 
+	 */
+	public Object sendOmegleMult(String endPoint, String msg)
+	{
+		int limit = 20;
+		int curr = 1;
+		if (front > 0) curr = front;
+		while (curr < limit)
+		{
+			Object obj = null;
+			try
+			{
+				System.out.println("WOW " + constructUrl(curr+"")+endPoint);
+				obj = sendOmegleHttpRequest(constructUrl(curr+"")+endPoint, msg);
+				front = curr;
+				System.out.println("HEY " + front);
+				return obj;
+			}
+			catch(IOException e)
+			{
+				front = -1;
+				curr++;
+			}
+		}
+		return null;
+	}
+	
+	public String constructUrl(String front)
+	{
+		return ServerConstants.BASE_URL_PRE+front+ServerConstants.BASE_URL_SUF;
+	}
+	/**
 	 * Send an HTTP request to an Omegle endpoint. Use clientID and attach message if exists. Forward the response to methods ProcessJson or ProcessText accordingly
 	 * 
 	 * @param endPoint - where to send the request to
 	 * @param msg - the contents of the message
 	 * @return the possible return values are as described in ProcessJson and ProcessText
+	 * @throws IOException 
 	 */
-	public Object sendOmegleHttpRequest(String endPoint, String msg)
+	private Object sendOmegleHttpRequest(String endPoint, String msg) throws IOException
 	{
 			URL url = null;
 			HttpURLConnection conn = null;
@@ -150,8 +191,6 @@ public class OmegleService {
 			} catch (SocketTimeoutException e) {
 				timeouts++;
 				if (timeouts > 10) currEvents.add(ServerConstants.EVENT_DISCONNECT);		// auto disconnection upon bad connectivity
-			} catch (IOException e) {
-				e.printStackTrace();
 			} 
 		return null;
 	}
@@ -187,7 +226,7 @@ public class OmegleService {
 	/**
 	 * Try to look for clientID, connection keyword and common interests in the response message. If none found, try to retrieve the event in it
 	 * @param the response in json format
-	 * @return Success message or as described in retrieveEvent
+	 * @return the Event resulting in the call to 
 	 */
 	private Object processJson(String json) 
 	{
@@ -298,35 +337,7 @@ public class OmegleService {
 		}
 		return (String) ret;
 	}
-	/**
-	 * 	Return the event in the json. If it's a message received add it to the messages queue
-	 * 
-	 * 	@param json
-	 * 	@return null if unsuccessful or the event
-	 
-	private String retrieveEvent(String json) {
-		JSONArray jsonobj = null;
-		Object ret = null;
-		try {
-			jsonobj = new JSONArray(json);
-			for (int i=0; i<jsonobj.length(); i++)
-			{
-				JSONArray firstObj = (JSONArray) jsonobj.get(i);
-				ret = firstObj.get(0);
-				if (ret.equals(ServerConstants.EVENT_GOTMESSAGE)) 
-					msgs.add((String) firstObj.get(1));
-			}
-		} catch (JSONException e) {
-			return null;
-		}
-		if (timeouts > 0) timeouts--;
-		return (String) ret;
-	}*/
-	/**
-	 * 	Destroying this service -
-	 * 		Interrupt the polling mechanism and nullify the main and service components.
-	 * 		After this the constructor needs to be called again to reactivate the service
-	 */
+
 	@SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
 	public void destroy() {
 		if (main != null) 
