@@ -9,7 +9,7 @@ public class ClientConstants {
 	public final static String BASE_URL_PRE = "https://front";
 	public final static String BASE_URL_SUF = ".omegle.com/";
 	public final static String BASE_URL_SUFFIX = "&lang=en";
-	public final static String BASE_URL_BODY = "start?rcs=1&firstevents=1&spid=&randid=3EV6ABEE";
+	public final static String BASE_URL_BODY = "start?rcs=1&firstevents=1&spid=&randid=6F7B3TZ7";
 	public final static String URL_CONNECT = BASE_URL_BODY+BASE_URL_SUFFIX;
 	public final static String URL_CONNECT_INTERESTS = BASE_URL_BODY+"&%s"+BASE_URL_SUFFIX;
 	public final static String URL_EVENT = "events";

@@ -102,16 +102,14 @@ public class OmegleService {
 		if (currEvents.isEmpty() || (currEvents.peek() != null && !currEvents.peek().equals(ServerConstants.EVENT_DISCONNECT))) 
 		{
 			ArrayList<String> events = null;
-			try {
-				events = (ArrayList<String>) sendOmegleHttpRequest(ServerConstants.URL_EVENT, null);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			events = (ArrayList<String>) sendOmegleMult(ServerConstants.URL_EVENT, null);
+
 			if (events != null) 
 			{
-				for (String s : events)
+				for (String s : events){
 					currEvents.add(s);
+					System.out.println("EVENT " + s);
+				}
 			}
 		}
 	}
@@ -132,11 +130,11 @@ public class OmegleService {
 				System.out.println("WOW " + constructUrl(curr+"")+endPoint);
 				obj = sendOmegleHttpRequest(constructUrl(curr+"")+endPoint, msg);
 				front = curr;
-				System.out.println("HEY " + front);
 				return obj;
 			}
 			catch(IOException e)
 			{
+			    e.printStackTrace();
 				front = -1;
 				curr++;
 			}
@@ -165,10 +163,11 @@ public class OmegleService {
 			try {
 				url = new URL(endPoint);
 				conn = (HttpURLConnection) url.openConnection();
-				setHeaders(conn,endPoint,"42");
+				//setHeaders(conn,endPoint,endPoint.getBytes().length+"");
 				//conn.connect();
 				conn.setDoOutput(true);
 				conn.setReadTimeout(6000);
+				conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11");
 				os = conn.getOutputStream();
 				String toSend = String.join("=", "id",clientId);
 				if (msg != null)
@@ -184,8 +183,13 @@ public class OmegleService {
 				String res = new Scanner(is,"UTF-8").useDelimiter("\\A").next();
 				is.close();	
 				conn.disconnect();
-				if (res != null && conn.getRequestProperty("Accept").equals("application/json")) return processJson(res);
-				else return processText(endPoint,res);
+				try {
+                    JSONObject obj = new JSONObject(res);
+                    System.out.println(res);
+                    return processJson(endPoint, res);
+                } catch (JSONException e) {
+                    return processText(endPoint,res);
+                }
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (SocketTimeoutException e) {
@@ -228,14 +232,23 @@ public class OmegleService {
 	 * @param the response in json format
 	 * @return the Event resulting in the call to 
 	 */
-	private Object processJson(String json) 
+	private Object processJson(String url, String json) 
 	{
 		String client = "";
 		if ((client = retrieveClientId(json)) != null)
 		{
 			//status = ServerConstants.STATUS_ONLINE;
 			clientId = client;
-			//activate();
+			if (url.equals(ServerConstants.URL_DISCONNECT)) 
+            {
+                status = ServerConstants.STATUS_OFFLINE;
+                destroy();
+            }
+            else if (url.contains(ServerConstants.BASE_URL_BODY) || url.equals(ServerConstants.URL_STOPSEARCH)) 
+            {
+                status = ServerConstants.STATUS_ONLINE;
+                activate();
+            }       
 		}
 		return retrieveConnAndLikes(json);
 	}

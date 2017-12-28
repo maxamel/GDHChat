@@ -205,7 +205,7 @@ public class OmegleClient extends Application {
 						    	break;
 						    }
 						}
-						if (!connected) service.sendOmegleMult(ClientConstants.URL_STOPSEARCH, null);
+						if (!connected && !getInterests().isEmpty() ) service.sendOmegleMult(ClientConstants.URL_STOPSEARCH, null);
 					}
 					catch(InterruptedException e)
 					{
