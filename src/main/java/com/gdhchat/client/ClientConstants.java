@@ -1,4 +1,4 @@
-package com.desktopomegle.client;
+package com.gdhchat.client;
 
 public class ClientConstants {
 

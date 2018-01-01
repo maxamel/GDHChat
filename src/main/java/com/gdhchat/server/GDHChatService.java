@@ -1,11 +1,10 @@
-package com.desktopomegle.server;
+package com.gdhchat.server;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -17,10 +16,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.gdh.main.Configuration;
+import com.gdh.main.GDHVertex;
+import com.gdh.main.Node;
+import com.gdh.main.PrimaryVertex;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-public class OmegleService {
-	private static OmegleService service = null;
+public class GDHChatService {
+	private static GDHChatService service = null;
+	private List<Node> nodes = new ArrayList<>();
 	private String clientId = "";
 	private ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();
 	private String status = ServerConstants.STATUS_OFFLINE;
@@ -34,26 +39,30 @@ public class OmegleService {
 	 * Get the service instance currently used. If it's null create it. Note - activation is possible only if the service exists
 	 * @return the service itself
 	 */
-	public static synchronized OmegleService getInstance()
+	public static synchronized GDHChatService getInstance()
 	{
-		if (service == null) service = new OmegleService();
+		if (service == null) service = new GDHChatService();
 		return service;
 	}
 	
-	private OmegleService()
+	private GDHChatService()
 	{
 	
 	}
 	/**
 	 * 	Activation of the service itself. Polls Omegle every second for an event.  
 	 */
-	private void activate()
+	public void activate()
 	{
 		if (main == null && service != null)
 		{
 			main = new Thread(new Runnable() {			
 				@Override
 				public void run() {
+					PrimaryVertex primary = new PrimaryVertex();
+					GDHVertex vertex = new GDHVertex();
+					Configuration conf = new Configuration();
+					conf.setExchangeTimeout(60000).setRetries(20).setIP("localhost").setPort("5004");
 					timeouts++;
 					while (status.equals(ServerConstants.STATUS_ONLINE) && !Thread.interrupted())
 					{
@@ -112,6 +121,18 @@ public class OmegleService {
 				}
 			}
 		}
+	}
+	
+	public boolean addChatPartner(String ipport)
+	{
+		if (status.equals(ServerConstants.STATUS_OFFLINE))
+		{
+			String[] array = ipport.split(":");
+			Node node = new Node(array[0], array[1]);
+			nodes.add(node);	
+			return true;
+		}
+		else return false;
 	}
 	/**
 	 * 
@@ -184,7 +205,7 @@ public class OmegleService {
 				is.close();	
 				conn.disconnect();
 				try {
-                    JSONObject obj = new JSONObject(res);
+                    new JSONObject(res);
                     System.out.println(res);
                     return processJson(endPoint, res);
                 } catch (JSONException e) {
@@ -261,7 +282,7 @@ public class OmegleService {
 	 * 	@param contentLen - content length. Could be null for certain occasion in which the default value of 42 is used
 	 * 	@throws ProtocolException
 	 */
-	private void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
+	/*private void setHeaders(HttpURLConnection conn, String urlSend, String contentLen) throws ProtocolException 
 	{
 		conn.setRequestMethod("POST");
 		conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded"); 
@@ -272,7 +293,7 @@ public class OmegleService {
 		
 		if (urlSend.equals(ServerConstants.URL_EVENT) || urlSend.contains(ServerConstants.BASE_URL_BODY))conn.setRequestProperty("Accept","application/json");
 		else if (urlSend.equals(ServerConstants.URL_SEND)) conn.setRequestProperty("Content-Length",contentLen);
-	}
+	}*/
 
 	/**
 	 * 	Try to look for the connect keyword signifying a successful connection and the common likes with the current stranger
@@ -359,7 +380,7 @@ public class OmegleService {
 			main = null;
 		}
 		timeouts = -1;
-		OmegleService.service = null;
+		GDHChatService.service = null;
 		msgs.clear();
 		currEvents.clear();
 		likes = "";

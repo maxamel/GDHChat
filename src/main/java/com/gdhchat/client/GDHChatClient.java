@@ -1,4 +1,4 @@
-package com.desktopomegle.client;
+package com.gdhchat.client;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -6,7 +6,8 @@ import java.util.List;
 
 import org.fxmisc.richtext.InlineCssTextArea;
 
-import com.desktopomegle.server.OmegleService;
+import com.gdhchat.server.GDHChatService;
+
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -37,8 +38,8 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class OmegleClient extends Application {
-	private OmegleService service;
+public class GDHChatClient extends Application {
+	private GDHChatService service;
 	private Timeline timeline;
 	private String currEvent = "";
 	private boolean isTyping = false;
@@ -49,8 +50,8 @@ public class OmegleClient extends Application {
 	private boolean isAutoDisconnection = true;
 	private Button connection = new Button();
 	private TextArea chat = new TextArea();
-	private InlineCssTextArea interests = new InlineCssTextArea();
-	private ArrayList<Integer> interestsIndices = new ArrayList<>();
+	private InlineCssTextArea chatPartners = new InlineCssTextArea();
+	private ArrayList<Integer> chatPartnersIndices = new ArrayList<>();
 	private Stage stage;
 	    
 	public static void main(String[] args) {	    	
@@ -63,7 +64,7 @@ public class OmegleClient extends Application {
 	    @Override
 	    public void start(Stage primaryStage) {
 	    	stage = primaryStage;
-	        primaryStage.setTitle("Omegle");   
+	        primaryStage.setTitle("GDHChat");   
 	        primaryStage.setResizable(false);
 	        setupStatusLabel();
 	        setupToggleAutoDisconnection();
@@ -111,7 +112,7 @@ public class OmegleClient extends Application {
 	    	Tooltip toolTip = new Tooltip();
 			toolTip.setText("Auto-Disconnection on bad connectivity");
 			toggleAutoDisconnection.setTooltip(toolTip);
-			toggleAutoDisconnection.setTextFill(Paint.valueOf("LIGHTGREEN"));
+			toggleAutoDisconnection.setTextFill(Paint.valueOf("GREEN"));
 	    	toggleAutoDisconnection.setOnAction(new EventHandler<ActionEvent>() {
 	       	 
 	            @Override
@@ -143,10 +144,10 @@ public class OmegleClient extends Application {
 	       	 
 	            @Override
 	            public void handle(ActionEvent event) {
-	            	service = OmegleService.getInstance();
+	            	service = GDHChatService.getInstance();
 	            	if (service != null)
 	            	{
-	            		connectWithInterests();
+	            		connect();
 	            		isTyping = false;
 	            		timeline = new Timeline(new KeyFrame(Duration.seconds(0.1), ev -> {
 	            			scrollDown();
@@ -183,15 +184,13 @@ public class OmegleClient extends Application {
 		}
 
 		/**
-		 * 		If interests bar isn't empty try to connect with interests. You get 5 chances in 1 second intervals for this connection.
-		 * 		Otherwise connect normally.  
+		 * 		Establish a connection with chatPartners  
 		 */
-		private synchronized void  connectWithInterests(){
+		private synchronized void connect(){
 			Task<Void> task1 = new Task<Void>() {
 				@Override
 				protected Void call() throws Exception {
-					String urlConn = ClientConstants.URL_CONNECT;
-		        	if (getInterests().size() > 0) urlConn = String.format(ClientConstants.URL_CONNECT_INTERESTS,processInterests(getInterests()));
+					processPartners(getChatPartners());
 					try
 					{
 						boolean connected = false;
@@ -199,13 +198,13 @@ public class OmegleClient extends Application {
 						long end = (long) (start + Duration.seconds(5).toMillis());
 						while (System.currentTimeMillis() < end) {
 						    Thread.sleep(1000);
-						    if (service != null && service.sendOmegleMult(urlConn, null) != null && service.getStatus().equals(ClientConstants.STATUS_ONLINE)) 
+						    /*if (service != null && service.sendOmegleMult(urlConn, null) != null && service.getStatus().equals(ClientConstants.STATUS_ONLINE)) 
 						    {
 						    	connected = true;
 						    	break;
-						    }
+						    }*/
 						}
-						if (!connected && !getInterests().isEmpty() ) service.sendOmegleMult(ClientConstants.URL_STOPSEARCH, null);
+						if (!connected && !getChatPartners().isEmpty() ) service.sendOmegleMult(ClientConstants.URL_STOPSEARCH, null);
 					}
 					catch(InterruptedException e)
 					{
@@ -249,92 +248,90 @@ public class OmegleClient extends Application {
 		
 		/**
 		 * 
-		 * 		@param interests
-		 * 		@return The part of the url containing the interests
+		 * 		@param a list of chatPartners
 		 */
-		private String processInterests(List<String> interests) 
-		{
-			StringBuilder result = new StringBuilder("topics=");
-			String start = "%5B%22";
-			String delim = "%22%2c%22";
-			String end = "%22%5D";
-			
-			result.append(start);
-			for (int i=0; i<interests.size()-1; i++)
-				result.append(interests.get(i)+delim);		
-			result.append(interests.get(interests.size()-1));
-			result.append(end);
-			
-			return result.toString();
+		private void processPartners(List<String> nodes) 
+		{		
+			for (int i=0; i<nodes.size()-1; i++)
+			{
+				service.addChatPartner(nodes.get(i));
+			}
 		}
 
 		/**
 		 * 
-		 * 		@return a list of the interests the user inserted in the interests bar
+		 * 		@return a list of the chatPartners the user inserted in the chatPartners bar
 		 */
-		private List<String> getInterests() 
+		private List<String> getChatPartners() 
 		{
 			List<String> result = new ArrayList<String>();
-			String textToProcess = interests.getText();
-			for (int i=0; i<interestsIndices.size()-1; i++)
-				result.add(textToProcess.substring(interestsIndices.get(i), interestsIndices.get(i+1)-1));
+			String textToProcess = chatPartners.getText();
+			for (int i=0; i<chatPartnersIndices.size()-1; i++)
+				result.add(textToProcess.substring(chatPartnersIndices.get(i), chatPartnersIndices.get(i+1)-1));
 			return result;
 		}
 
 		/**
-		 * 		Configure the behavior of the interests bar. Although it's a regular text box there are some differences. 
+		 * 		Configure the behavior of the chatPartners bar. Although it's a regular text box there are some differences. 
 		 * 		Dragging the mouse and marking text isn't possible. Only writing and deleting is supported
 		 */
-		private void setupInterestsListeners() {		// disable text selection or movement of cursor with arrows. Only writing and deleting is supported
+		private void setupChatPartnersListeners() {		// disable text selection or movement of cursor with arrows. Only writing and deleting is supported
 			
-			interests.setOnMousePressed(new EventHandler<MouseEvent>() {
+			chatPartners.setOnMousePressed(new EventHandler<MouseEvent>() {
 				@Override
 				public void handle(MouseEvent arg0) {
-					interests.selectRange(0, 0);
-					interests.positionCaret(interests.getLength());
+					chatPartners.selectRange(0, 0);
+					chatPartners.positionCaret(chatPartners.getLength());
 				}
 			});
-			interests.setOnMouseDragged(new EventHandler<MouseEvent>() {
+			chatPartners.setOnMouseDragged(new EventHandler<MouseEvent>() {
 
 				@Override
 				public void handle(MouseEvent event) {
-					interests.selectRange(0, 0);
-					interests.positionCaret(interests.getLength());
+					chatPartners.selectRange(0, 0);
+					chatPartners.positionCaret(chatPartners.getLength());
 				}
 			});
-			interests.setOnKeyPressed(new EventHandler<KeyEvent>() {
+			chatPartners.setOnKeyPressed(new EventHandler<KeyEvent>() {
 				@Override
 				public void handle(KeyEvent key) {
 					if (key.getCode().equals(KeyCode.ENTER))
 					{
 						key.consume();
-						if (interestsIndices.size() == 0 || interests.getText().length() > interestsIndices.get(interestsIndices.size()-1) + 1)
+						if (chatPartnersIndices.size() == 0 || chatPartners.getText().length() > chatPartnersIndices.get(chatPartnersIndices.size()-1) + 1)
 						{
-							interests.appendText(",");
-							interests.setStyle(0, interests.getText().length()-1, 
-						    		"-fx-stroke: indigo;"
-						    		+"-fx-stroke-width: 1px;"
-						    		+"border:solid 1px #ccc; "
-									+"-fx-font: 17px \"Consolas\";"	
-									);
-							if (interestsIndices.isEmpty()) interestsIndices.add(0);
-							interestsIndices.add(interests.getText().length());
+							if (true /* pattern match */)
+							{
+								chatPartners.appendText(",");
+								chatPartners.setStyle(0, chatPartners.getText().length()-1, 
+							    		"-fx-stroke: indigo;"
+							    		+"-fx-stroke-width: 1px;"
+							    		+"border:solid 1px #ccc; "
+										+"-fx-font: 17px \"Consolas\";"	
+										);
+								if (chatPartnersIndices.isEmpty()) chatPartnersIndices.add(0);
+								chatPartnersIndices.add(chatPartners.getText().length());
+							}
+							else
+							{
+								System.out.println("Please enter a chat partner in the form IP:port");
+							}
 						}
 					}
-					else if (key.getCode().equals(KeyCode.BACK_SPACE) && interestsIndices.contains(interests.getCaretPosition()) )
+					else if (key.getCode().equals(KeyCode.BACK_SPACE) && chatPartnersIndices.contains(chatPartners.getCaretPosition()) )
 					{
 						key.consume();
-						if (interestsIndices.size() > 1) 
+						if (chatPartnersIndices.size() > 1) 
 						{
-							interests.clearStyle(interestsIndices.get(interestsIndices.size()-2), interests.getText().length());
-							interests.replaceText(interests.getText().length()-1, interests.getText().length(), "");	
-							interestsIndices.remove(interestsIndices.size()-1);
+							chatPartners.clearStyle(chatPartnersIndices.get(chatPartnersIndices.size()-2), chatPartners.getText().length());
+							chatPartners.replaceText(chatPartners.getText().length()-1, chatPartners.getText().length(), "");	
+							chatPartnersIndices.remove(chatPartnersIndices.size()-1);
 						}
 						else 
 						{
-							interests.replaceText("");
-							interestsIndices = new ArrayList<Integer>();
-							interests.setStyle("-fx-border-color: black; "
+							chatPartners.replaceText("");
+							chatPartnersIndices = new ArrayList<Integer>();
+							chatPartners.setStyle("-fx-border-color: black; "
 									+ "-fx-font: 15px \"Serif\"; "
 									+ "-fx-fill: #818181;"
 									);
@@ -344,7 +341,7 @@ public class OmegleClient extends Application {
 						key.consume();
 				}
 			});
-			interests.setTooltip(new Tooltip("Insert your interests seperated by ENTER"));
+			chatPartners.setTooltip(new Tooltip("Insert your chat partners in the form IP:port seperated by ENTER"));
 		}
 		/**
 		 * 		Add images to the dialog
@@ -366,8 +363,8 @@ public class OmegleClient extends Application {
 		}
 
 		/**
-		 * 		Update the connection button according to the com.desktopomegle.server status
-		 * 		@param status - the current com.desktopomegle.server status 
+		 * 		Update the connection button according to the com.gdhchat.server status
+		 * 		@param status - the current com.gdhchat.server status 
 		 */
 		private void updateConnectionButton(String status) {
 			String img = "";
@@ -456,10 +453,10 @@ public class OmegleClient extends Application {
 			if (timeline != null) timeline.stop();
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
 			chat.setStyle("-fx-border-color: red;");
-			interests.clearStyle(0, interests.getText().length());
-			interests.replaceText("");
-			interests.setEditable(true);
-			interestsIndices.clear();
+			chatPartners.clearStyle(0, chatPartners.getText().length());
+			chatPartners.replaceText("");
+			chatPartners.setEditable(true);
+			chatPartnersIndices.clear();
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_OFFLINE);
 			updateStatusLabel(10);
 			if (service != null) {
@@ -477,9 +474,9 @@ public class OmegleClient extends Application {
 			updateConnectionButton(ClientConstants.STATUS_ONLINE); 
 			chat.setStyle("-fx-border-color: greenyellow;");
 			StrangerStatus.setText(ClientConstants.STRANGER_STATUS_IDLE);
-			interests.setEditable(false);
-			interests.replaceText(service.getLikes());
-			interests.setStyle(0, interests.getText().length(),
+			chatPartners.setEditable(false);
+			chatPartners.replaceText(service.getLikes());
+			chatPartners.setStyle(0, chatPartners.getText().length(),
 					"-fx-border-color: black; "
 					+ "-fx-font: 15px \"Consolas\"; "
 					+ "-fx-fill: #818181;"
@@ -502,7 +499,7 @@ public class OmegleClient extends Application {
 			StrangerStatus.setAlignment(Pos.CENTER);
 			StrangerStatus.setPrefWidth(200);
 			Tooltip toolTip = new Tooltip();
-			toolTip.setText("Stranger Status and Connectivity Color");
+			toolTip.setText("Connection Status and Color");
 			String img = ClientConstants.RESOURCES+"RedGreen.png";
 			InputStream in = getClass().getClassLoader().getResourceAsStream(img);
 			Image image = new Image(in);
@@ -543,21 +540,21 @@ public class OmegleClient extends Application {
 		}
 		
 		/**
-		 * 		The panel containing the interests bar
+		 * 		The panel containing the chatPartners bar
 		 * 		@param middlePane - the panel we're adding elements to
 		 */
 		private void setupMiddlePane(GridPane middlePane) {
 			middlePane.setAlignment(Pos.CENTER);
-			Label interest = new Label("Interests: ");
+			Label interest = new Label("Chat Partners: ");
 			middlePane.add(interest, 0, 0);
-			middlePane.add(interests, 1, 0);
+			middlePane.add(chatPartners, 1, 0);
 			
-			interests.setPrefWidth(450);
-			interests.setStyle("-fx-border-color: black; "
+			chatPartners.setPrefWidth(450);
+			chatPartners.setStyle("-fx-border-color: black; "
 					+ "-fx-font: 15px \"Serif\"; "
 					+ "-fx-fill: #818181;"
 					);
-			setupInterestsListeners();
+			setupChatPartnersListeners();
 		}
 
 
@@ -567,7 +564,7 @@ public class OmegleClient extends Application {
 		 */
 		private void setupUpperPane(GridPane upperPane) {
 			upperPane.setAlignment(Pos.CENTER);
-			Label stranger = new Label("Stranger Status: ");
+			Label stranger = new Label("Connection Status: ");
 			upperPane.setHgap(10);
 	        upperPane.add(stranger, 0, 0);
 	        upperPane.add(StrangerStatus, 1, 0);

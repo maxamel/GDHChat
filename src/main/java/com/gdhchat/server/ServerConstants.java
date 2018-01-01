@@ -1,4 +1,4 @@
-package com.desktopomegle.server;
+package com.gdhchat.server;
 
 public class ServerConstants {
 
