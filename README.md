@@ -1,5 +1,5 @@
 ![Alt text](src/main/resources/images/omegle.png)<br/>
-[![Travis CI](https://travis-ci.org/maxamel/DesktopOmegle.svg)](https://travis-ci.org/maxamel/DesktopOmegle)<br/>
+[![Circle CI](https://travis-ci.org/maxamel/DesktopOmegle.svg)]([![CircleCI](https://dl.circleci.com/status-badge/img/circleci/VrxAa5tSns3x9pseRDihbe/FqbAYJEgkBbN83wuFnkS97/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/VrxAa5tSns3x9pseRDihbe/FqbAYJEgkBbN83wuFnkS97/tree/master))<br/>
 [![Coverity Scan](https://scan.coverity.com/projects/5872/badge.svg?flat=1)](https://scan.coverity.com/projects/5872?tab=overview)<br/>
 # OmegleGPT
 
