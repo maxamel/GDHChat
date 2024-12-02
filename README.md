@@ -3,16 +3,19 @@
 [![Coverity Scan](https://scan.coverity.com/projects/5872/badge.svg?flat=1)](https://scan.coverity.com/projects/5872?tab=overview)<br/>
 # OmegleGPT
 
-A Desktop ChatGPT-based application to simulate the Omegle chat service.
-
-Allows chatting with a random stranger (powered by ChatGPT). Requires an API key from [OpenAI](OpenAI's website). You can get it for free along with a nice amount of tokens to get you started.
+A JavaFX application recreating the Omegle chat service experience with ChatGPT, letting you chat with AI 'strangers' based on mutual interests. 
+Requires an API key from [OpenAI](https://platform.openai.com/), which you can get for free.
 
 <img src="https://github.com/maxamel/DesktopOmegle/blob/master/src/main/resources/images/screen.png" align="center" />
 
 # Introduction
 
-This repository first started as a Desktop client for the popular online chat service [Omegle](https://en.wikipedia.org/wiki/Omegle). The service allowed connecting with random strangers based on similar interests and anonymously chatting with them one on one. No rooms, no photos, no registrations, etc.
+This repository first started as a Desktop client for the popular online chat service [Omegle](https://en.wikipedia.org/wiki/Omegle). The service allowed connecting with random strangers based on similar interests and anonymously chatting with them one on one. No rooms, no photos, no registrations, etc. As simple as possible.
 No official documentation existed for the API of Omegle, and it was mostly discovered using open source network analyzers like WireShark and Fiddler.
+
+Original Omegle layout:
+
+![image](https://github.com/user-attachments/assets/6dd45af3-8d2b-46cd-ae83-75070f5222a7)
 
 After some time, the service started experiencing difficulties with allegations of sexual harassment by users, internet misuse and lawsuits, which eventually led to its shutdown in 2023. This led to the reincarnation of this project as a simulation of the Omegle experience using ChatGPT. Like in Omegle, a user connects to someone with similar interests on the other end, not knowing who he/she is, where they're from, etc. 
 Only this time the random stranger is actually ChatGPT, with different personality traits each time. Like in real life, not every converation partner will be nice, and not every conversation will feel interesting and engaging to you. If it's not - hit the disconnect button and reconnect to talk to someone new 😄
@@ -21,7 +24,7 @@ Only this time the random stranger is actually ChatGPT, with different personali
 
 The project's goal is to explore how a ChatGPT-based application can replace existing chat services. Similar to Omegle, many of today’s online chat platforms face significant challenges, primarily stemming from user misconduct. As AI models grow more advanced and their outputs increasingly resemble human communication, it's only a matter of time before AI bots in chat rooms become as capable of engaging in conversation as any human.
 
-Among future works that can be done in this area, is a hybrid approach where users can get paired with either real participants or ChatGPT-based applications.
+Among future works that can be done in this area, is the hybrid approach where users can get paired with either real participants or ChatGPT-based applications.
 At the end of the conversation, participants must vote on whether they believe they were interacting with a real person or an AI. This serves as a form of [Turing test]((https://en.wikipedia.org/wiki/Turing_test)), providing a genuine evaluation of the current capabilities of AI.
 
 # Testing and Code Quality
