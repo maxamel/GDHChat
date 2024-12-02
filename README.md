@@ -1,57 +1,75 @@
 ![Alt text](src/main/resources/images/omegle.png)<br/>
 [![Travis CI](https://travis-ci.org/maxamel/DesktopOmegle.svg)](https://travis-ci.org/maxamel/DesktopOmegle)<br/>
 [![Coverity Scan](https://scan.coverity.com/projects/5872/badge.svg?flat=1)](https://scan.coverity.com/projects/5872?tab=overview)<br/>
-# DesktopOmegle
+# OmegleGPT
 
-A Desktop Application for the online chat Omegle. 
+A Desktop ChatGPT-based application to simulate the Omegle chat service.
 
-Currenlty supports just the basic feature of chatting with random strangers or with strangers with similar interests.
-A new enhancement is the auto disconnection upon discovering bad connectivity. You can toggle this feature on and off. The connectivity level is estimated by the number of timeouts during the conversation. After ten consecutive timeouts the connection is broken off. The connectivity is indicated by the color on the status of your conversation counterpart, so the disconnection won't come as a surprise.  
+Allows chatting with a random stranger (powered by ChatGPT). Requires an API key from [OpenAI](OpenAI's website). You can get it for free along with a nice amount of tokens to get you started.
 
 <img src="https://github.com/maxamel/DesktopOmegle/blob/master/src/main/resources/images/screen.png" align="center" />
 
+# Introduction
+
+This repository first started as a Desktop client for the popular online chat service [Omegle](https://en.wikipedia.org/wiki/Omegle). The service allowed connecting with random strangers based on similar interests and anonymously chatting with them one on one. No rooms, no photos, no registrations, etc.
+No official documentation existed for the API of Omegle, and it was mostly discovered using open source network analyzers like WireShark and Fiddler.
+After some time, the service started experiencing difficulties with allegations of sexual harassment by users, internet misuse and lawsuits, which eventually led to its shutdown in 2023. This led to the reincarnation of this project as a simulation of the Omegle experience using ChatGPT. Like in Omegle, a user connects to someone with similar interests on the other end, not knowing who he/she is, where they're from, etc. 
+Only this time the random stranger is actually ChatGPT, with different personality traits each time. Like in real life, not every converation partner will be nice, and not every conversation will feel interesting and engaging to you. If it's not - hit the disconnect button and reconnect to talk to someone new 😄
+
 # Overview
 
-After developing with Java Swing for many years I wanted to explore the possibilities of JavaFX. Most of the concepts, such as keeping the UI thead free, are similar.
-The intention was to make a software project which would follow the high-cohesion, low-coupling principle. If anyone has doubts or questions regarding the design and code please raise an issue, I'd be happy to hear.
-
-I hope someone will find this useful. I'm interested in adding features which are not present in the original Omegle website, so any ideas are welcome.
-
-The API of the Omegle site was discovered using open source packet sniffers like WireShark and Fiddler. 
+The project's goal is to explore how a ChatGPT-based application can replace existing chat services. Similar to Omegle, many of today’s online chat platforms face significant challenges, primarily stemming from user misconduct. As AI models grow more advanced and their outputs increasingly resemble human communication, it's only a matter of time before AI bots in chat rooms become as capable of engaging in conversation as any human.
+Among future works that can be done in this area, is a hybrid approach where users can get paired with either real participants or ChatGPT-based applications.
+At the end of the conversation, participants must vote on whether they believe they were interacting with a real person or an AI. This serves as a form of [Turing test]((https://en.wikipedia.org/wiki/Turing_test)), providing a genuine evaluation of the current capabilities of AI.
 
 # Testing and Code Quality
 
 The application was mostly tested manually, there are a few unit tests for the Service module. 
 Currently writing further tests is the top priority. 
-Code quality is maintained by using static analysis tools: FindBugs and Coverity.
-During every build process gradle runs findbugs to check for defects. Every now and then I also upload the project to the Coverity site to run a full scan. In the future, this process can be automated by configuring Travis CI to run Coverity every build.
+Code quality is maintained by using static analysis tools: SpotBugs and Coverity.
 
 # Prerequisites
 
-Written in Java 8. 
+Written in Java 21. JavaFX is used for the UI.
 
 Built with Gradle.
-
-The repository provides the JavaFX jar prebuilt, as there are issues with JavaFX dependencies on different platforms. For example, Oracle JDK 8 provides it, while OpenJDK does not. This means one will have to install OpenJFX to get this to work, which can be challenging (at least on Windows). A prebuilt jar solves all these issues. However, this conveniece comes with a heavy price of 17MB.
 
 # Installation
 
 Get the code and build it:
 ```
-git clone https://github.com/maxamel/DesktopOmegle
-cd DesktopOmegle
+git clone https://github.com/maxamel/OmegleGPT
+cd OmegleGPT
 gradle clean build
 ```
-After a successful build, run the Jar in the build directory.
+After a successful build, run the Jar in the build directory:
+```
+java -jar OmegleGPT-all.jar <YOUR_API_KEY>
+```
 
 # Contributing
 
-Contributions are welcome. Please submit an issue before submitting a pull request detailing the changes. 
+Any contributions are welcome. 
 
 Possibilities for enhancement:
 
-1) Write tests for server+client modules.
+1) Add tests.
 
-2) Add progress bar when searching for users with common interests. Currently fade out is supported when connecting.
+2) Add a tab with a mini dashboard to track token usage and configure token based limits. Roughly speaking - give users ability to choose their own limits, balancing between more contextful conversations and token consumption.
+
+3) Output metrics from the application to understand how the model is behaving in different applications.
+
+4) Provide configuration capabilities to give users the ability to fine-tune the personality traits their chat counterpart can exhibit.
+   
+
+# Limitations
+
+One of the difficulties faced when developing ChatGPT-based applications is token consumption and limits. If you want to build a chat oriented app that needs to retain context throughout a conversation, you need to send this context with every API request. As the conversation gets longer, every call requires more tokens than before. In other words, the token cunsumption **per-call** grows linearly. There is also a technical hard limit for the amount of tokens that can be sent in a request, and that depends on the specific model used. In light of these reasons, there needs to be a mechanism for cutting down the token consumption, at the expense of reducing the context available for the model. 
+OmegleGPT uses conversation summarization as a first line of mitigation for these issues. That means chunks of the conversation are summarized into short 1-2 sentence bits. That's usually enough to keep the token usage stable over time.
+The second line of mitigation, for really long conversations, is throwing away old summarizations once enough time passes. That means the model will lose the information in those summarizations, but typically that's OK in very long conversations.
+ 
+# Fun Facts
+- The first commit to this repository was made on April 2015. That is over six months before the foundation of OpenAI, the developer of ChatGPT (upon which this application is based).
+- Over 25% of the code for this ChatGPT-based application was written by... ChatGPT. So thank you ChatGPT, for contributing to the integration with you.
 
 
