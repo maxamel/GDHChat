@@ -2,7 +2,6 @@ package com.gdhchat.server;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -11,19 +10,28 @@ import com.gdhchat.server.response.ChatGPTResponseError;
 import com.gdhchat.server.response.ChatGPTResponseSuccess;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import static com.gdhchat.client.ClientConstants.ROLE_SYSTEM;
+import static com.gdhchat.server.ServerConstants.SUMMARIZED_CONTEXT;
 import static com.gdhchat.server.ServerConstants.SUMMARY_PROMPT;
 
 
 public class OmegleGPTService {
+
 	private static OmegleGPTService service = null;
+	private boolean debug = false;
 	private ChatGPTConnector chatgpt;
-	private static List<ObjectNode> chatHistory = new ArrayList<>();
-	private static int unsummarizedMessageStreak = 0;
-	private ConcurrentLinkedQueue<String> currEvents = new ConcurrentLinkedQueue<String>();
+	private List<ObjectNode> chatHistory = new ArrayList<>();
+
+	private int unsummarizedMessageStreak = 0;
+	// how many non-system messages to summarize each time a summarization is run
+	private static int messagesBatchSizeToSummarize = 10;
+	// how many non-system messages to accumulate before running summarization
+	private static int messagesUnsummarizedStreakThreshold = 20;
+	// how many messages to accumulate in total before starting to drop summaries
+	private static int messagesSummaryDropThreshold = 100;
+
 	private String status = ServerConstants.STATUS_OFFLINE;
-	private String likes = "";
-	private int timeouts = -1;
-	
+
 	/**
 	 * Get the service instance currently used. If it's null create it.
 	 * @return the service itself
@@ -45,42 +53,27 @@ public class OmegleGPTService {
 		return this.chatgpt;
 	}
 
-	public String getLikes() {
-		return likes;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
 	public void setStatus(String status) {
 		this.status = status;
 	}
 
-	public String getCurrEvent() {
-		return currEvents.poll();
-	}
-
-	public int getTimeouts() {
-		return timeouts;
-	}
-
 	/**
-	 * @param msg - query for ChatGPT, which will be send alongside the chat history for converstation context
+	 * @param msg - query for ChatGPT, which will be sent alongside the chat history for converstation context
 	 * @param role - the role of the user sending the message
 	 * @return Response from ChatGPT
 	 */
 	public ChatGPTResponse sendChatGPTMessage(String msg, String role) {
 		ChatGPTResponse chatGPTResponse;
-		if (unsummarizedMessageStreak > 20) {
+		if (unsummarizedMessageStreak > messagesUnsummarizedStreakThreshold) {
 			summarizeMessages();
 		}
 		try {
 			String response = getConnector().sendMessage(msg, role, chatHistory);
-			System.out.println("Received back ChatGPT response: " + response);
+			if (debug)
+				System.out.println("Received ChatGPT response: " + response);
 			// add user message to chat history after it was processed successfully
 			addMessageToHistory(msg, role);
-			if (role.equals("user")) {
+			if (!role.equals(ROLE_SYSTEM)) {
 				unsummarizedMessageStreak++;
 			}
 			chatGPTResponse = new ChatGPTResponseSuccess();
@@ -95,18 +88,23 @@ public class OmegleGPTService {
 		return chatGPTResponse;
 	}
 
+	/**
+	 * 	Summarize the messages in chatHistory according to the parameters:
+	 * 	unsummarizedMessageStreak, messagesBatchSizeToSummarize, messagesSummaryDropThreshold
+	 * 	It works by summarizing the first messagesBatchSizeToSummarize non-system messages
+	 * 	In addition, if messagesSummaryDropThreshold is crossed we also drop a single summary system message
+	 */
 	private void summarizeMessages() {
-		int limit = 10;
 		int current = 1;
 		List<ObjectNode> chatToSummarize = new ArrayList<>();
 		List<ObjectNode> newChatHistory = new ArrayList<>();
 		// first configuration message (connection message always stays)
 		newChatHistory.add(chatHistory.getFirst());
 		// collect messages to summarize
-		while (current < limit && current < chatHistory.size()) {
+		while (chatToSummarize.size() < messagesBatchSizeToSummarize && current < chatHistory.size()) {
 			ObjectNode node = chatHistory.get(current);
-			// summarize only user messages
-			if (node.get("role").equals("system")) {
+			// summarize only user/assistant messages
+			if (node.get("role").asText().equals(ROLE_SYSTEM)) {
 				newChatHistory.add(node);
 				current++;
 				continue;
@@ -114,14 +112,14 @@ public class OmegleGPTService {
 			chatToSummarize.add(node);
 			current++;
 		}
-		if (current < limit) {
+		if (current < messagesBatchSizeToSummarize) {
 			System.out.println("Not enough messages to summarize so far");
 			return;
 		}
 		// request summary
 		ChatGPTResponse chatGPTResponse;
 		try {
-			String response = getConnector().sendMessage(SUMMARY_PROMPT, "system", chatToSummarize);
+			String response = getConnector().sendMessage(SUMMARY_PROMPT, ROLE_SYSTEM, chatToSummarize);
 			chatGPTResponse = new ChatGPTResponseSuccess();
 			chatGPTResponse.parse(response);
 		} catch (Exception e) {
@@ -131,20 +129,31 @@ public class OmegleGPTService {
 		}
 		if (chatGPTResponse.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS)) {
 			ObjectNode payload = new ObjectMapper().createObjectNode();
-			payload.put("role", "system");
-			payload.put("content", "Summarized context:" + chatGPTResponse.getMessage());
+			payload.put("role", ROLE_SYSTEM);
+			payload.put("content", SUMMARIZED_CONTEXT + chatGPTResponse.getMessage());
 			newChatHistory.add(payload);
 		} else {
 			System.out.println("Summarization task failed so we are dropping the unsummarized messages");
 		}
-		unsummarizedMessageStreak -= limit;
+		unsummarizedMessageStreak -= messagesBatchSizeToSummarize;
 		// copy the rest of the messages as-is to the new chat history
 		while (current < chatHistory.size()) {
 			newChatHistory.add(chatHistory.get(current));
 			current++;
 		}
 		chatHistory = newChatHistory;
-
+		if (chatHistory.size() > messagesSummaryDropThreshold) {
+			// drop one summary
+			int index = 5;
+			while (index < chatHistory.size()) {
+				ObjectNode node = chatHistory.get(index);
+				if (node.get("role").asText().equals(ROLE_SYSTEM) && node.get("content").asText().startsWith(SUMMARIZED_CONTEXT)) {
+					chatHistory.remove(index);
+					break;
+				}
+				index++;
+			}
+		}
 	}
 
 	/**
@@ -152,7 +161,7 @@ public class OmegleGPTService {
 	 * @param content - the message body
 	 * @param role - The role behind the message. For user it is user/system, for chatgpt it is assistant
 	 */
-	private static void addMessageToHistory(String content, String role) {
+	private void addMessageToHistory(String content, String role) {
 		ObjectNode payload = new ObjectMapper().createObjectNode();
 		payload.put("role", role);
 		payload.put("content", content);
@@ -160,10 +169,11 @@ public class OmegleGPTService {
 	}
 
 	public void destroy() {
-		timeouts = -1;
 		chatHistory.clear();
-		currEvents.clear();
-		likes = "";
 		status = ServerConstants.STATUS_OFFLINE;
 	}
+
+    public String getStatus() {
+        return status;
+    }
 }

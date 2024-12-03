@@ -7,8 +7,8 @@ plugins {
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_23
-	targetCompatibility = JavaVersion.VERSION_23
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 }
 
 javafx {
@@ -16,9 +16,6 @@ javafx {
 	version = '21' // change version as needed
 }
 
-test {
-	exclude '**/**'
-}
 
 repositories {
 	mavenCentral()

@@ -1,6 +1,5 @@
 ![Alt text](src/main/resources/images/omegle.png)<br/>
 [![CircleCI](https://dl.circleci.com/status-badge/img/circleci/VrxAa5tSns3x9pseRDihbe/FqbAYJEgkBbN83wuFnkS97/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/VrxAa5tSns3x9pseRDihbe/FqbAYJEgkBbN83wuFnkS97/tree/master)<br/>
-[![Coverity Scan](https://scan.coverity.com/projects/5872/badge.svg?flat=1)](https://scan.coverity.com/projects/5872?tab=overview)<br/>
 # OmegleGPT
 
 A JavaFX application recreating the Omegle chat service experience with ChatGPT, letting you chat with AI 'strangers' based on mutual interests. 
@@ -35,7 +34,8 @@ Code quality is maintained by using static analysis tools: SpotBugs and Coverity
 
 # Prerequisites
 
-Written in Java 21. JavaFX is used for the UI.
+Written in Java 21, UI is implemented in JavaFX 21.
+Uses the *gpt-4o-mini* model of ChatGPT for efficiency and cost reasons.
 
 Built with Gradle.
 
