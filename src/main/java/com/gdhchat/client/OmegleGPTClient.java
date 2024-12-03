@@ -85,7 +85,7 @@ public class OmegleGPTClient extends Application {
 			chat.setWrapText(true);
 	        chat.setEditable(false);
 			VirtualizedScrollPane<InlineCssTextArea> scrollPane = new VirtualizedScrollPane<>(chat);
-			chat.textProperty().addListener((_, _, _) -> {
+			chat.textProperty().addListener((obs, oldOne, newOne) -> {
 				scrollPane.scrollYBy(Double.MAX_VALUE); // Scroll to the bottom
 			});
 	        TextArea area = new TextArea();
@@ -151,7 +151,7 @@ public class OmegleGPTClient extends Application {
 		 * 	Pressing of the connect button results in polling the service every 150 millis for an event and changing the view accordingly
 		 */
 		private void onConnectButtonAction() {
-			connection.setOnAction(_ -> {
+			connection.setOnAction(e -> {
                 service = OmegleGPTService.getInstance(apiKey);
                 if (service != null) {
                     connect();
@@ -207,7 +207,7 @@ public class OmegleGPTClient extends Application {
                     ft.setToValue(0.1);
                     ft.setCycleCount(1);
                     ft.play();
-                    ft.setOnFinished(_ -> new Thread(taskConnect).start());
+                    ft.setOnFinished(e -> new Thread(taskConnect).start());
 
                     return null;
                 }
@@ -253,7 +253,7 @@ public class OmegleGPTClient extends Application {
 			if (debug)
 				System.out.println("Personality traits selected: " + mood + " " + intellect + " " + style);
 
-			List<String> randomInterests = getInterests().stream().filter(_ -> random.nextBoolean()).toList();
+			List<String> randomInterests = getInterests().stream().filter(item -> random.nextBoolean()).toList();
 
 			if (debug)
 				System.out.println("Interests selected: " + String.join(", ", randomInterests));
@@ -403,7 +403,6 @@ public class OmegleGPTClient extends Application {
 			area.setOnKeyTyped((EventHandler<Event>) arg0 -> {
                 if (!isTyping && service != null)
                 {
-                    //service.sendOmegleMult(ClientConstants.URL_TYPING, null);//sendOmegleTypeSignal();
                     isTyping = true;
                 }
             });
@@ -414,7 +413,7 @@ public class OmegleGPTClient extends Application {
 		 * 		@param area - the chat area where the user inputs text	
 		 */
 		private void onSendButtonAction(TextArea area) {
-			send.setOnAction(_ -> {
+			send.setOnAction(e -> {
                 String toSend = area.getText();
 
 				if (!toSend.isEmpty())
@@ -425,7 +424,7 @@ public class OmegleGPTClient extends Application {
                             return service.sendChatGPTMessage(toSend, ROLE_USER);
 						}
 					};
-					sendChatGPT.setOnSucceeded(e -> {
+					sendChatGPT.setOnSucceeded(event -> {
 						ChatGPTResponse response = sendChatGPT.getValue();
 						if (response.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS)) {
 							int caretBefore = chat.getCaretPosition();
@@ -490,13 +489,13 @@ public class OmegleGPTClient extends Application {
 				final int index = i;
 				KeyFrame keyFrame = new KeyFrame(
 						Duration.millis(100 * (i + 1)), // Adjust speed here (100 ms per character)
-                        _ -> {
+                        event -> {
 							textDisplay.appendText(content.substring(index, index + 1));
 						}
 				);
 				timeline.getKeyFrames().add(keyFrame);
 			}
-			timeline.setOnFinished(_ -> {
+			timeline.setOnFinished(event -> {
 				updateStatusLabel(STRANGER_STATUS_IDLE);
 				mediaPlayer.stop();
 			});
