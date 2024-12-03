@@ -427,26 +427,20 @@ public class OmegleGPTClient extends Application {
 					sendChatGPT.setOnSucceeded(event -> {
 						ChatGPTResponse response = sendChatGPT.getValue();
 						if (response.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS)) {
-							int caretBefore = chat.getCaretPosition();
 							chat.appendText("\nStranger: ");
-							int caretAfter = chat.getCaretPosition();
-							chat.setStyle(caretBefore, caretAfter, "-fx-font: bold 16px \"Verdana\"; -fx-fill: crimson;");
+							chat.setStyle(chat.getLength()-"\nStranger: ".length(), chat.getLength(), "-fx-font: bold 16px \"Verdana\"; -fx-fill: crimson;");
 							updateStatusLabel(STRANGER_STATUS_TYPING);
 							type(response.getMessage(), chat);
 						} else {
-							int caretBefore = chat.getCaretPosition();
 							chat.appendText("\nCHATGPT SYSTEM MESSAGE: "+response.getMessage());
-							int caretAfter = chat.getCaretPosition();
-							chat.setStyle(caretBefore, caretAfter, "-fx-fill: red; -fx-font: bold 16px \"Verdana\";");
+							chat.setStyle(chat.getLength()-("\nCHATGPT SYSTEM MESSAGE: "+response.getMessage()).length(),
+									chat.getLength(), "-fx-fill: red; -fx-font: bold 16px \"Verdana\";");
 							updateStatusLabel(ClientConstants.STRANGER_STATUS_IDLE);
 						}
 					});
 					isTyping = false;
-					int caretBefore = chat.getCaretPosition();
                     chat.appendText("\nYou: ");
-
-					int caretAfter = chat.getCaretPosition();
-					chat.setStyle(caretBefore, caretAfter, "-fx-font: bold 16px \"Verdana\"; -fx-fill: royalblue ;");
+					chat.setStyle(chat.getLength()-"\nYou: ".length(), chat.getLength(), "-fx-font: bold 16px \"Verdana\"; -fx-fill: royalblue ;");
 					chat.setStyle(chat.getLength()-1, chat.getLength(), "-fx-fill: black; -fx-font: 14px \"JetBrains Mono\";");
 					chat.appendText(toSend);
                     area.setText("");
