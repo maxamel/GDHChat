@@ -7,6 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Grant Execute Permissions to gradlew
+          command: "chmod +x ./gradlew"
+      - run:
           name: Set up Gradle Wrapper
           command: "./gradlew wrapper" # Ensures Gradle wrapper is available
       - run:
