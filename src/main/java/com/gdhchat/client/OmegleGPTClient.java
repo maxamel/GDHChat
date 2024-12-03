@@ -48,6 +48,7 @@ import static com.gdhchat.client.ClientConstants.*;
 
 public class OmegleGPTClient extends Application {
 	private OmegleGPTService service;
+	private boolean debug = false;
 	private static String apiKey;
 	private boolean isTyping = false;
 	private Button send = new Button();
@@ -90,12 +91,16 @@ public class OmegleGPTClient extends Application {
 	        TextArea area = new TextArea();
 			area.setPrefSize(700, 200);
 	        area.setTooltip(new Tooltip("Enter your message here"));
+			area.setStyle("-fx-font: 16px \"JetBrains Mono\";");
 	        onAreaAction(area);
 	        addImages();
 	        connection.setPrefWidth(100);
 	        send.setText("Send");
 	        onConnectButtonAction();
 	        onSendButtonAction(area);
+
+			interests.replaceText("Insert your interests separated by ENTER");
+			interests.setStyle(interestsDefaultStyle);
 	        
 	        GridPane root = new GridPane();
 	        root.setAlignment(Pos.TOP_CENTER);
@@ -165,18 +170,22 @@ public class OmegleGPTClient extends Application {
                         boolean connected = false;
                         long start = System.currentTimeMillis();
                         long end = (long) (start + Duration.seconds(6).toMillis());
+						int attempt = 1;
                         while (System.currentTimeMillis() < end) {
                             Thread.sleep(2000);
 							String processedMsg = processConnectionPrompt();
-							System.out.println("Sending processed prompt: " + processedMsg);
+							System.out.println("Connecting to ChatGPT attempt #" + attempt);
+							if (debug)
+								System.out.println("Sending processed prompt: " + processedMsg);
                             if (service != null) {
                                 ChatGPTResponse response = service.sendChatGPTMessage(processedMsg, ROLE_SYSTEM);
+								attempt++;
 								if (response.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS) &&
 										response.getMessage().contains(ClientConstants.OMEGLE_START)) {
 									return null;
                                 }
 								else {
-									System.out.println("Connecting to chatGPT failed. The response was: " + response.getMessage() + ". Trying again...");
+									System.out.println("Connecting to chatGPT failed. The response was: " + response.getMessage());
 								}
                             }
                         }
@@ -204,7 +213,8 @@ public class OmegleGPTClient extends Application {
                 }
             };
 			taskConnect.setOnSucceeded(paramT -> {
-				System.out.println("The connection task succeeded with: " + paramT);
+				if (debug)
+					System.out.println("The connection to ChatGPT succeeded");
 				service.setStatus(ClientConstants.STATUS_ONLINE);
                 FadeTransition ft1 = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
                 ft1.setFromValue(0.1);
@@ -216,7 +226,8 @@ public class OmegleGPTClient extends Application {
 				onConnect();
             });
 			taskConnect.setOnFailed(paramT -> {
-				System.out.println("The connection task failed with: " + paramT);
+				if (debug)
+					System.out.println("The connection task failed");
 				service.setStatus(ClientConstants.STATUS_OFFLINE);
 				FadeTransition ft1 = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
 				ft1.setFromValue(0.1);
@@ -239,9 +250,15 @@ public class OmegleGPTClient extends Application {
 
 			randomIndex = random.nextInt(styleStates.length);
 			String style = styleStates[randomIndex];
-			System.out.println("Personality traits selected: " + mood + " " + intellect + " " + style);
+			if (debug)
+				System.out.println("Personality traits selected: " + mood + " " + intellect + " " + style);
+
+			List<String> randomInterests = getInterests().stream().filter(_ -> random.nextBoolean()).toList();
+
+			if (debug)
+				System.out.println("Interests selected: " + String.join(", ", randomInterests));
 			return String.format(ClientConstants.CONNECT_PROMPT,
-					String.join(", ", getInterests()),
+					String.join(", ", randomInterests),
 					String.join(", ", new String[]{mood, intellect, style}));
 		}
 
@@ -273,27 +290,42 @@ public class OmegleGPTClient extends Application {
                 interests.moveTo(interests.getLength());
             });
 
+			// Focus listener to clear placeholder
+			interests.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+				if (isNowFocused && interests.getText().equals("Insert your interests separated by ENTER")) {
+					interests.clear();
+					interests.setStyle("-fx-font: 17px \"Consolas\"; -fx-border-color: black"); // Reset style
+				} else {
+					// Restore placeholder when losing focus and text is empty
+					if (interests.getText().isEmpty()) {
+						interests.replaceText("Insert your interests separated by ENTER");
+						interests.setStyle(interestsDefaultStyle);
+					}
+				}
+			});
+
+			// Text property listener to restore placeholder
+			interests.textProperty().addListener((obs, oldText, newText) -> {
+				if (!interests.isFocused() && newText.isEmpty()) {
+					interests.replaceText("Insert your interests separated by ENTER");
+					interests.setStyle(interestsDefaultStyle);
+				}
+			});
+
 			interests.addEventFilter(KeyEvent.KEY_PRESSED, key -> {
 				if (key.getCode().equals(KeyCode.ENTER)) {
 					key.consume(); // Prevent the default action
 					if (interestsIndices.isEmpty() || interests.getText().length() > interestsIndices.get(interestsIndices.size()-1) + 1) {
-						if (true /* pattern match */)
-						{
-							interests.appendText(",");
-							interests.setStyle(0, interests.getText().length()-1,
-									"-fx-stroke: indigo;"
-											+"-fx-stroke-width: 1px;"
-											+"border:solid 1px #ccc; "
-											+"-fx-font: 17px \"Consolas\";"
-							);
-							if (interestsIndices.isEmpty())
-								interestsIndices.add(0);
-							interestsIndices.add(interests.getText().length());
-						}
-						else
-						{
-							System.out.println("Please enter your interests separated by ENTER");
-						}
+						interests.appendText(",");
+						interests.setStyle(0, interests.getText().length()-1,
+								"-fx-stroke: indigo;"
+										+"-fx-stroke-width: 1px;"
+										+"border:solid 1px #ccc; "
+										+"-fx-font: 17px \"Consolas\";"
+						);
+						if (interestsIndices.isEmpty())
+							interestsIndices.add(0);
+						interestsIndices.add(interests.getText().length());
 					}
 				} else if (key.getCode().equals(KeyCode.BACK_SPACE) && interestsIndices.contains(interests.getCaretPosition()) ) {
 					key.consume();
@@ -306,7 +338,7 @@ public class OmegleGPTClient extends Application {
 					else
 					{
 						interests.replaceText("");
-						interestsIndices = new ArrayList<Integer>();
+						interestsIndices = new ArrayList<>();
 						interests.setStyle("-fx-border-color: black; "
 								+ "-fx-font: 15px \"Serif\"; "
 								+ "-fx-fill: #818181;"
@@ -435,8 +467,8 @@ public class OmegleGPTClient extends Application {
 	            	if (service != null)
 	            	{	            		
 	            		ChatGPTResponse response = service.sendChatGPTMessage(ClientConstants.DISCONNECT_PROMPT, "system");
-						if (!response.getMessage().equals(ClientConstants.OMEGLE_STOP)) {
-							System.out.println("ChatGPT did not disconnect. Received: " + response.getMessage());
+						if (!response.getMessage().equals(ClientConstants.OMEGLE_STOP) && debug) {
+							System.out.println("ChatGPT did not disconnect. The response was: " + response.getMessage());
 						}
 	            		isTyping = false;
 	            		chat.appendText("\nYou Disconnected. ");
@@ -502,11 +534,11 @@ public class OmegleGPTClient extends Application {
 		 */
 		private void onConnect() {
 			send.setDisable(false);
-			updateConnectionButton(ClientConstants.STATUS_ONLINE); 
+			updateConnectionButton(ClientConstants.STATUS_ONLINE);
 			chat.setStyle("-fx-border-color: greenyellow;");
 			updateStatusLabel(ClientConstants.STRANGER_STATUS_IDLE);
 			interests.setEditable(false);
-			interests.replaceText(service.getLikes());
+			interests.replaceText(interests.getText().substring(0, interests.getText().length()-1));
 			interests.setStyle(0, interests.getText().length(),
 					"-fx-border-color: black; "
 					+ "-fx-font: 15px \"Consolas\"; "
@@ -578,7 +610,7 @@ public class OmegleGPTClient extends Application {
 		}
 		
 		/**
-		 * 		The panel containing the chatPartners bar
+		 * 		The panel containing the interests bar
 		 * 		@param middlePane - the panel we're adding elements to
 		 */
 		private void setupMiddlePane(GridPane middlePane) {
@@ -588,10 +620,6 @@ public class OmegleGPTClient extends Application {
 			middlePane.add(interests, 1, 0);
 			
 			interests.setPrefWidth(650);
-			interests.setStyle("-fx-border-color: black; "
-					+ "-fx-font: 15px \"Serif\"; "
-					+ "-fx-fill: #818181;"
-					);
 			setupInterestsListeners();
 		}
 

@@ -16,9 +16,6 @@ javafx {
 	version = '21' // change version as needed
 }
 
-test {
-	exclude '**/**'
-}
 
 repositories {
 	mavenCentral()
