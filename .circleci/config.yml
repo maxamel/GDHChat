@@ -8,13 +8,13 @@ jobs:
       - checkout
       - run:
           name: Set up Gradle Wrapper
-          command: "./OmegleGPT/gradlew wrapper" # Ensures Gradle wrapper is available
+          command: "./gradlew wrapper" # Ensures Gradle wrapper is available
       - run:
           name: Run Gradle Build
-          command: "./OmegleGPT/gradlew build" # Runs the build and test tasks
+          command: "./gradlew build" # Runs the build and test tasks
       - run:
           name: Run Tests
-          command: "./OmegleGPT/gradlew test" # Explicitly runs the tests
+          command: "./gradlew test" # Explicitly runs the tests
 
 workflows:
   build-and-test-workflow:
