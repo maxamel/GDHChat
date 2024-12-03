@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build-and-test:
     docker:
-      - image: cimg/openjdk:17.0 # Use an appropriate JDK Docker image for your Gradle project
+      - image: cimg/openjdk:21.0 # Use an appropriate JDK Docker image for your Gradle project
     steps:
       - checkout
       - run:
