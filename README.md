@@ -45,11 +45,11 @@ Get the code and build it:
 ```
 git clone https://github.com/maxamel/OmegleGPT
 cd OmegleGPT
-gradle clean build
+./gradlew clean build
 ```
 After a successful build, run the Jar in the build directory:
 ```
-java -jar OmegleGPT-all.jar <YOUR_API_KEY>
+java -jar build/libs/OmegleGPT-all.jar <YOUR_API_KEY>
 ```
 
 # Contributing
