@@ -65,6 +65,8 @@ Possibilities for enhancement:
 3) Output metrics from the application to understand how the model is behaving in different applications.
 
 4) Provide configuration capabilities to give users the ability to fine-tune the personality traits their chat counterpart can exhibit.
+
+5) Handle responses blocked by OpenAI moderation.
    
 
 # Limitations

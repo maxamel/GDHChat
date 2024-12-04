@@ -373,6 +373,7 @@ public class TestService {
 			ChatGPTResponse response = mockService.sendChatGPTMessage("hello", ROLE_USER);
 			assertTrue(response.getMessage().equals(ClientConstants.OMEGLE_START));
 			assertTrue(response.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS));
+			assertTrue(mockService.getConsumedTokens() == 137);
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
