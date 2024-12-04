@@ -53,9 +53,10 @@ public class OmegleGPTClient extends Application {
 	private OmegleGPTService service;
 	private String textColor = "black";
 	private boolean isBackgroundWhite = true;
+	private MediaPlayer mediaPlayer = loadTypingSound();
 	private boolean debug = false;
 	private static String apiKey;
-	private boolean isTyping = false;
+	private boolean isStrangerTyping = false;
 	private Button send = new Button();
 	private Label lbl = new Label();
 	private Label StrangerStatus = new Label();
@@ -66,6 +67,7 @@ public class OmegleGPTClient extends Application {
 	private InlineCssTextArea interests = new InlineCssTextArea();
 	private ArrayList<Integer> interestsIndices = new ArrayList<>();
 	private final Random random = new Random(System.currentTimeMillis());
+	private Timeline typingTimeline = new Timeline();
 	private Stage stage;
 	    
 	public static void main(String[] args) {
@@ -227,7 +229,7 @@ public class OmegleGPTClient extends Application {
 								attempt++;
 								if (response.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS) &&
 										response.getMessage().contains(ClientConstants.OMEGLE_START)) {
-									System.out.println("Connected successfully to ChatGPT" + attempt);
+									System.out.println("Connected successfully to ChatGPT on attempt " + attempt);
 									updateStatusLabel();
 									return null;
                                 }
@@ -248,7 +250,7 @@ public class OmegleGPTClient extends Application {
             };
 			Task<Void> taskFading = new Task<>() {
                 @Override
-                protected Void call() throws Exception {
+                protected Void call() {
                     FadeTransition ft = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
                     ft.setFromValue(1.0);
                     ft.setToValue(0.1);
@@ -260,8 +262,7 @@ public class OmegleGPTClient extends Application {
                 }
             };
 			taskConnect.setOnSucceeded(paramT -> {
-				if (debug)
-					System.out.println("The connection to ChatGPT succeeded");
+				System.out.println("The connection to ChatGPT succeeded");
 				service.setStatus(ClientConstants.STATUS_ONLINE);
                 FadeTransition ft1 = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
                 ft1.setFromValue(0.1);
@@ -274,8 +275,7 @@ public class OmegleGPTClient extends Application {
 				onConnect();
             });
 			taskConnect.setOnFailed(paramT -> {
-				if (debug)
-					System.out.println("The connection task failed");
+				System.out.println("The connection task failed");
 				service.setStatus(ClientConstants.STATUS_OFFLINE);
 				FadeTransition ft1 = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
 				ft1.setFromValue(0.1);
@@ -316,7 +316,7 @@ public class OmegleGPTClient extends Application {
 		 */
 		private List<String> getInterests()
 		{
-			List<String> result = new ArrayList<String>();
+			List<String> result = new ArrayList<>();
 			String textToProcess = interests.getText();
 			for (int i = 0; i< interestsIndices.size()-1; i++)
 				result.add(textToProcess.substring(interestsIndices.get(i), interestsIndices.get(i+1)-1));
@@ -448,11 +448,11 @@ public class OmegleGPTClient extends Application {
 		 * 		@param area - the text box containing the users' message
 		 */
 		private void onAreaAction(TextArea area) {
-			area.setOnKeyTyped((EventHandler<Event>) arg0 -> {
-                if (!isTyping && service != null) {
-                    isTyping = true;
+			/*area.setOnKeyTyped((EventHandler<Event>) arg0 -> {
+                if (!isStrangerTyping && service != null) {
+                    isStrangerTyping = true;
                 }
-            });
+            });*/
 		}
 		
 		/**
@@ -463,7 +463,7 @@ public class OmegleGPTClient extends Application {
 			send.setOnAction(e -> {
                 String toSend = inputArea.getText();
 
-				if (!toSend.isEmpty())
+				if (!toSend.isEmpty() && !isStrangerTyping)
                 {
 					Task<ChatGPTResponse> sendChatGPT = new Task<>() {
 						@Override
@@ -486,7 +486,7 @@ public class OmegleGPTClient extends Application {
 							updateStatusLabel(ClientConstants.STRANGER_STATUS_IDLE);
 						}
 					});
-					isTyping = false;
+					isStrangerTyping = false;
                     chat.appendText("\nYou: ");
 					chat.setStyle(chat.getLength()-"\nYou: ".length(), chat.getLength(), "-fx-font: bold 16px \"Verdana\"; -fx-fill: royalblue ;");
 					chat.setStyle(chat.getLength()-1, chat.getLength(), "-fx-fill: " + textColor + "; -fx-font: 14px \"Sitka Text\";");
@@ -511,7 +511,7 @@ public class OmegleGPTClient extends Application {
 						if (!response.getMessage().equals(ClientConstants.OMEGLE_STOP) && debug) {
 							System.out.println("ChatGPT did not disconnect. The response was: " + response.getMessage());
 						}
-	            		isTyping = false;
+	            		isStrangerTyping = false;
 	            		chat.appendText("\nYou Disconnected. ");
 						chat.setStyle(chat.getLength()-"\nYou Disconnected. ".length(), chat.getLength(), "-fx-fill: " + textColor + "; -fx-border-color: red; -fx-font: bold 16px \"Verdana\";-fx-background-color: " + getOppositeColor(textColor) + ";");
 	            		onDisconnect();
@@ -522,10 +522,10 @@ public class OmegleGPTClient extends Application {
 
 		private void type(String content, InlineCssTextArea textDisplay) {
 			// Timeline to simulate typing
-			Timeline timeline = new Timeline();
-			MediaPlayer mediaPlayer = loadTypingSound();
+			typingTimeline = new Timeline();
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             mediaPlayer.play();
+			isStrangerTyping = true;
 			textDisplay.setStyle(textDisplay.getLength()-1, textDisplay.getLength(), "-fx-fill: " + textColor + "; -fx-font: 14px \"Sitka Text\";");
 			for (int i = 0; i < content.length(); i++) {
 				final int index = i;
@@ -535,13 +535,14 @@ public class OmegleGPTClient extends Application {
 							textDisplay.appendText(content.substring(index, index + 1));
 						}
 				);
-				timeline.getKeyFrames().add(keyFrame);
+				typingTimeline.getKeyFrames().add(keyFrame);
 			}
-			timeline.setOnFinished(event -> {
+			typingTimeline.setOnFinished(event -> {
 				updateStatusLabel(STRANGER_STATUS_IDLE);
 				mediaPlayer.stop();
+				isStrangerTyping = false;
 			});
-			timeline.play();
+			typingTimeline.play();
 		}
 
 		private MediaPlayer loadTypingSound() {
@@ -557,6 +558,9 @@ public class OmegleGPTClient extends Application {
 		 */
 		private void onDisconnect() {
 			send.setDisable(true);
+			typingTimeline.stop();
+			mediaPlayer.stop();
+			isStrangerTyping = false;
 			updateConnectionButton(ClientConstants.STATUS_OFFLINE);
 			String currentStyle = chat.getStyle().replace("-fx-border-color: red", "");
 			currentStyle = currentStyle.replace("-fx-border-color: greenyellow", "");
