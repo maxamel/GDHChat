@@ -19,6 +19,7 @@ public class OmegleGPTService {
 
 	private static OmegleGPTService service = null;
 	private boolean debug = false;
+	private int consumedTokens = 0;
 	private ChatGPTConnector chatgpt;
 	private List<ObjectNode> chatHistory = new ArrayList<>();
 
@@ -78,6 +79,7 @@ public class OmegleGPTService {
 			}
 			chatGPTResponse = new ChatGPTResponseSuccess();
 			chatGPTResponse.parse(response);
+			this.consumedTokens += ((ChatGPTResponseSuccess)chatGPTResponse).getTokens();
 			// add chatgpt message to chat history after it we verified it succeeded
 			addMessageToHistory(chatGPTResponse.getMessage(), ((ChatGPTResponseSuccess)chatGPTResponse).getRole());
 		} catch (Exception e) {
@@ -171,6 +173,10 @@ public class OmegleGPTService {
 	public void destroy() {
 		chatHistory.clear();
 		status = ServerConstants.STATUS_OFFLINE;
+	}
+
+	public int getConsumedTokens() {
+		return this.consumedTokens;
 	}
 
     public String getStatus() {
