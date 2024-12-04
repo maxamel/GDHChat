@@ -5,7 +5,8 @@
 A JavaFX application recreating the Omegle chat service experience with ChatGPT, letting you chat with AI 'strangers' based on mutual interests. 
 Requires an API key from [OpenAI](https://platform.openai.com/), which you can get for free.
 
-<img src="https://github.com/maxamel/DesktopOmegle/blob/master/src/main/resources/images/screen.png" align="center" />
+![image](https://github.com/user-attachments/assets/1f757965-bd8f-410d-a465-6059dc301ab2)
+
 
 # Introduction
 
