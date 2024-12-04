@@ -24,7 +24,7 @@ Only this time the random stranger is actually ChatGPT, with different personali
 The project's goal is to explore how a ChatGPT-based application can replace existing chat services. Similar to Omegle, many of today’s online chat platforms face significant challenges, primarily stemming from user misconduct. As AI models grow more advanced and their outputs increasingly resemble human communication, it's only a matter of time before AI bots in chat rooms become as capable of engaging in conversation as any human.
 
 Among future works that can be done in this area, is the hybrid approach where users can get paired with either real participants or ChatGPT-based applications.
-At the end of the conversation, participants must vote on whether they believe they were interacting with a real person or an AI. This serves as a form of [Turing test]((https://en.wikipedia.org/wiki/Turing_test)), providing a genuine evaluation of the current capabilities of AI.
+At the end of the conversation, participants must vote on whether they believe they were interacting with a real person or an AI. This serves as a form of [Turing test](https://en.wikipedia.org/wiki/Turing_test), providing a genuine evaluation of the current capabilities of AI.
 
 # Testing and Code Quality
 
