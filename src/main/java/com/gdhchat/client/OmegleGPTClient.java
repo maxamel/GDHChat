@@ -9,7 +9,10 @@ import java.util.Random;
 import com.gdhchat.server.ServerConstants;
 import com.gdhchat.server.response.ChatGPTResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import javafx.scene.Cursor;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.InlineCssTextArea;
 
@@ -36,27 +39,29 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
-import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import org.fxmisc.richtext.model.StyleSpans;
 
 
 import static com.gdhchat.client.ClientConstants.*;
 
 public class OmegleGPTClient extends Application {
 	private OmegleGPTService service;
+	private String textColor = "black";
+	private boolean isBackgroundWhite = true;
 	private boolean debug = false;
 	private static String apiKey;
 	private boolean isTyping = false;
 	private Button send = new Button();
 	private Label lbl = new Label();
 	private Label StrangerStatus = new Label();
-	private Button toggleAutoDisconnection = new Button();
-	private boolean isAutoDisconnection = true;
+	private Button toggleModeButton = new Button();
 	private Button connection = new Button();
+	private TextArea inputArea = new TextArea();
 	private InlineCssTextArea chat = new InlineCssTextArea();
 	private InlineCssTextArea interests = new InlineCssTextArea();
 	private ArrayList<Integer> interestsIndices = new ArrayList<>();
@@ -75,12 +80,12 @@ public class OmegleGPTClient extends Application {
 	    @Override
 	    public void start(Stage primaryStage) {
 	    	stage = primaryStage;
-	        primaryStage.setTitle("OmegleGPTChat");
+	        primaryStage.setTitle("OmegleGPT");
 	        primaryStage.setResizable(false);
 	        setupStatusLabel();
-	        setupToggleAutoDisconnection();
+	        setupToggleMode();
 	        onDisconnect();
-	        chat.setStyle("-fx-border-color: red;-fx-background-color: white; -fx-font: 14px \"JetBrains Mono\"; ");
+	        chat.setStyle("-fx-border-color: red;-fx-background-color: white; -fx-font: 14px \"Sitka Text\"; ");
 	        chat.setPrefSize(700, 600);
 			chat.setWrapText(true);
 	        chat.setEditable(false);
@@ -88,16 +93,15 @@ public class OmegleGPTClient extends Application {
 			chat.textProperty().addListener((obs, oldOne, newOne) -> {
 				scrollPane.scrollYBy(Double.MAX_VALUE); // Scroll to the bottom
 			});
-	        TextArea area = new TextArea();
-			area.setPrefSize(700, 200);
-	        area.setTooltip(new Tooltip("Enter your message here"));
-			area.setStyle("-fx-font: 16px \"JetBrains Mono\";");
-	        onAreaAction(area);
+			inputArea.setPrefSize(700, 200);
+			inputArea.setTooltip(new Tooltip("Enter your message here"));
+			inputArea.setStyle("-fx-background-color: white; -fx-font: 16px \"Sitka Text\";");
+	        onAreaAction(inputArea);
 	        addImages();
 	        connection.setPrefWidth(100);
 	        send.setText("Send");
 	        onConnectButtonAction();
-	        onSendButtonAction(area);
+	        onSendButtonAction();
 
 			interests.replaceText("Insert your interests separated by ENTER");
 			interests.setStyle(interestsDefaultStyle);
@@ -120,31 +124,72 @@ public class OmegleGPTClient extends Application {
 	        gridpane.add(upperPane, 0, 1);
 	        gridpane.add(chat, 0, 2);
 	        gridpane.add(middlePane, 0, 3);
-	        gridpane.add(area, 0, 4);           
+	        gridpane.add(inputArea, 0, 4);
 	        gridpane.add(lowerPane, 0, 5);
 	        
 	        root.getChildren().add(gridpane);
 	        primaryStage.setScene(new Scene(root, 800, 800));
 	        primaryStage.show();
 	    }
-	    private void setupToggleAutoDisconnection() {
-	    	toggleAutoDisconnection.setPrefSize(125, 25);
-	    	toggleAutoDisconnection.setText("Auto-Disconnection");
+	    private void setupToggleMode() {
+	    	toggleModeButton.setPrefSize(25, 25);
 	    	Tooltip toolTip = new Tooltip();
-			toolTip.setText("Auto-Disconnection on bad connectivity");
-			toggleAutoDisconnection.setTooltip(toolTip);
-			toggleAutoDisconnection.setTextFill(Paint.valueOf("GREEN"));
-	    	toggleAutoDisconnection.setOnAction(new EventHandler<ActionEvent>() {
-	       	 
-	            @Override
-	            public void handle(ActionEvent event) {
-	            	isAutoDisconnection = !isAutoDisconnection;
-	            	if (!isAutoDisconnection) 
-	            		toggleAutoDisconnection.setTextFill(Paint.valueOf("RED"));
-	            	else
-	            		toggleAutoDisconnection.setTextFill(Paint.valueOf("LIGHTGREEN"));
-	            		//toggleAutoDisconnection.setStyle("-fx-font: 15px \"Serif\"; ");
-	            }});
+			toolTip.setText("Light/Dark Mode");
+			toolTip.setStyle(tooltipStyle);
+			toggleModeButton.setTooltip(toolTip);
+
+			Rectangle whiteSquare = new Rectangle(20, 20, Color.BLACK);
+			// Create a Button
+			toggleModeButton.setGraphic(whiteSquare); // Set the Rectangle as the button's graphic
+	    	toggleModeButton.setOnAction(event -> {
+                isBackgroundWhite = !isBackgroundWhite;
+				Rectangle square;
+				if (!isBackgroundWhite) {
+					square = new Rectangle(20, 20, Color.WHITE);
+					toggleModeButton.setGraphic(square);
+					textColor = "white";
+				} else {
+					square = new Rectangle(20, 20, Color.BLACK);
+					textColor = "black";
+				}
+				toggleModeButton.setGraphic(square);
+				String opposite = getOppositeColor(textColor);
+				String currentStyle = chat.getStyle().replace(";-fx-text-fill: " + opposite, "");
+				currentStyle = currentStyle.replace("-fx-background-color: " + textColor, "");
+				chat.setStyle(currentStyle + "-fx-background-color: " + opposite + ";-fx-text-fill: " + textColor);
+
+				currentStyle = inputArea.getStyle().replace(";-fx-text-fill: " + opposite, "");
+				currentStyle = currentStyle.replace("-fx-control-inner-background: " + textColor + ";-fx-background-color: " + textColor, "");
+				inputArea.setStyle(currentStyle + "-fx-control-inner-background: " + opposite + ";-fx-background-color: " + opposite + ";-fx-text-fill: " + textColor);
+				changeTextAreaColor(chat, textColor);
+            });
+		}
+
+		private void changeTextAreaColor(InlineCssTextArea textArea, String changeToColor) {
+			StyleSpans<String> styleSpans = textArea.getStyleSpans(0, textArea.getLength());
+
+			int currentPosition = 0; // Tracks the position in the text area
+
+			// Iterate over the spans
+			for (var span : styleSpans) {
+				String style = span.getStyle(); // Get the style for this span
+				int length = span.getLength(); // Get the length of the span
+				int endPosition = currentPosition + length;
+
+				// Check if the current style contains "-fx-fill: black"
+				String colorToChange = getOppositeColor(changeToColor);
+				if (style.contains("-fx-fill: " + colorToChange)) {
+					String updatedStyle = style.replace("-fx-fill: " + colorToChange, "-fx-fill: " + changeToColor);
+					textArea.setStyle(currentPosition, endPosition, updatedStyle);
+				}
+				currentPosition = endPosition;
+			}
+		}
+
+		private String getOppositeColor(String color) {
+			if (color.equals("black"))
+				return "white";
+			return "black";
 		}
 
 		/**
@@ -182,6 +227,8 @@ public class OmegleGPTClient extends Application {
 								attempt++;
 								if (response.getStatus().equals(ServerConstants.ResponseStatus.SUCCESS) &&
 										response.getMessage().contains(ClientConstants.OMEGLE_START)) {
+									System.out.println("Connected successfully to ChatGPT" + attempt);
+									updateStatusLabel();
 									return null;
                                 }
 								else {
@@ -222,7 +269,8 @@ public class OmegleGPTClient extends Application {
                 ft1.setCycleCount(1);
                 ft1.play();
                 chat.replaceText("Connected.");
-				chat.setStyle(chat.getLength()-"Connected.".length(), chat.getLength(), "-fx-fill: black; -fx-font: bold 16px \"Verdana\";");
+				System.out.println("Setting the background to " + getOppositeColor(textColor));
+				chat.setStyle(chat.getLength()-"Connected.".length(), chat.getLength(), "-fx-fill: " + textColor + "; -fx-font: bold 16px \"Verdana\";-fx-background-color: " + getOppositeColor(textColor) + ";");
 				onConnect();
             });
 			taskConnect.setOnFailed(paramT -> {
@@ -374,8 +422,8 @@ public class OmegleGPTClient extends Application {
 		 * 		@param status - the current com.gdhchat.server status 
 		 */
 		private void updateConnectionButton(String status) {
-			String img = "";
-			String action = "";
+			String img;
+			String action;
 			if (status.equals(ClientConstants.STATUS_OFFLINE)) 
 			{
 				img = ClientConstants.RESOURCES+"ON.png";
@@ -401,8 +449,7 @@ public class OmegleGPTClient extends Application {
 		 */
 		private void onAreaAction(TextArea area) {
 			area.setOnKeyTyped((EventHandler<Event>) arg0 -> {
-                if (!isTyping && service != null)
-                {
+                if (!isTyping && service != null) {
                     isTyping = true;
                 }
             });
@@ -410,11 +457,11 @@ public class OmegleGPTClient extends Application {
 		
 		/**
 		 * 		Upon sending a message the view should change. Send the message via the active service we point to
-		 * 		@param area - the chat area where the user inputs text	
+		 *
 		 */
-		private void onSendButtonAction(TextArea area) {
+		private void onSendButtonAction() {
 			send.setOnAction(e -> {
-                String toSend = area.getText();
+                String toSend = inputArea.getText();
 
 				if (!toSend.isEmpty())
                 {
@@ -431,6 +478,7 @@ public class OmegleGPTClient extends Application {
 							chat.setStyle(chat.getLength()-"\nStranger: ".length(), chat.getLength(), "-fx-font: bold 16px \"Verdana\"; -fx-fill: crimson;");
 							updateStatusLabel(STRANGER_STATUS_TYPING);
 							type(response.getMessage(), chat);
+							updateStatusLabel();
 						} else {
 							chat.appendText("\nCHATGPT SYSTEM MESSAGE: "+response.getMessage());
 							chat.setStyle(chat.getLength()-("\nCHATGPT SYSTEM MESSAGE: "+response.getMessage()).length(),
@@ -441,9 +489,9 @@ public class OmegleGPTClient extends Application {
 					isTyping = false;
                     chat.appendText("\nYou: ");
 					chat.setStyle(chat.getLength()-"\nYou: ".length(), chat.getLength(), "-fx-font: bold 16px \"Verdana\"; -fx-fill: royalblue ;");
-					chat.setStyle(chat.getLength()-1, chat.getLength(), "-fx-fill: black; -fx-font: 14px \"JetBrains Mono\";");
+					chat.setStyle(chat.getLength()-1, chat.getLength(), "-fx-fill: " + textColor + "; -fx-font: 14px \"Sitka Text\";");
 					chat.appendText(toSend);
-                    area.setText("");
+                    inputArea.setText("");
 					new Thread(sendChatGPT).start();
                 }
             });
@@ -465,7 +513,7 @@ public class OmegleGPTClient extends Application {
 						}
 	            		isTyping = false;
 	            		chat.appendText("\nYou Disconnected. ");
-						chat.setStyle(chat.getLength()-"\nYou Disconnected. ".length(), chat.getLength(), "-fx-fill: black; -fx-font: bold 16px \"Verdana\";");
+						chat.setStyle(chat.getLength()-"\nYou Disconnected. ".length(), chat.getLength(), "-fx-fill: " + textColor + "; -fx-border-color: red; -fx-font: bold 16px \"Verdana\";-fx-background-color: " + getOppositeColor(textColor) + ";");
 	            		onDisconnect();
 	            	}
 	            }	
@@ -478,7 +526,7 @@ public class OmegleGPTClient extends Application {
 			MediaPlayer mediaPlayer = loadTypingSound();
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             mediaPlayer.play();
-			textDisplay.setStyle(textDisplay.getLength()-1, textDisplay.getLength(), "-fx-fill: black; -fx-font: 14px \"JetBrains Mono\";");
+			textDisplay.setStyle(textDisplay.getLength()-1, textDisplay.getLength(), "-fx-fill: " + textColor + "; -fx-font: 14px \"Sitka Text\";");
 			for (int i = 0; i < content.length(); i++) {
 				final int index = i;
 				KeyFrame keyFrame = new KeyFrame(
@@ -509,8 +557,10 @@ public class OmegleGPTClient extends Application {
 		 */
 		private void onDisconnect() {
 			send.setDisable(true);
-			updateConnectionButton(ClientConstants.STATUS_OFFLINE); 
-			chat.setStyle("-fx-border-color: red;");
+			updateConnectionButton(ClientConstants.STATUS_OFFLINE);
+			String currentStyle = chat.getStyle().replace("-fx-border-color: red", "");
+			currentStyle = currentStyle.replace("-fx-border-color: greenyellow", "");
+			chat.setStyle(currentStyle + ";-fx-border-color: red;");
 			interests.clearStyle(0, interests.getText().length());
 			interests.replaceText("");
 			interests.setEditable(true);
@@ -528,16 +578,29 @@ public class OmegleGPTClient extends Application {
 		private void onConnect() {
 			send.setDisable(false);
 			updateConnectionButton(ClientConstants.STATUS_ONLINE);
-			chat.setStyle("-fx-border-color: greenyellow;");
+			String currentStyle = chat.getStyle().replace("-fx-border-color: red", "");
+			currentStyle = currentStyle.replace("-fx-border-color: greenyellow", "");
+			chat.setStyle(currentStyle + ";-fx-border-color: greenyellow;");
 			updateStatusLabel(ClientConstants.STRANGER_STATUS_IDLE);
 			interests.setEditable(false);
-			interests.replaceText(interests.getText().substring(0, interests.getText().length()-1));
+			if (!interests.getText().startsWith("Insert your interests"))
+				interests.replaceText(interests.getText().substring(0, interests.getText().length()-1));
 			interests.setStyle(0, interests.getText().length(),
 					"-fx-border-color: black; "
 					+ "-fx-font: 15px \"Consolas\"; "
 					+ "-fx-fill: #818181;"
 					);
 			onDisconnectButtonAction();
+		}
+
+		/**
+		 *  Update token consumption info
+		 */
+		private void updateStatusLabel() {
+			Tooltip toolTip = StrangerStatus.getTooltip();
+			toolTip.setStyle(tooltipStyle);
+			int tokens = service == null ? 0 : service.getConsumedTokens();
+			toolTip.setText("Tokens Consumed In Session: " + tokens);
 		}
 
 		/**
@@ -553,11 +616,15 @@ public class OmegleGPTClient extends Application {
 			StrangerStatus.setAlignment(Pos.CENTER);
 			StrangerStatus.setPrefWidth(200);
 			Tooltip toolTip = new Tooltip();
-			toolTip.setText("Connection Status and Color");
-			String img = ClientConstants.RESOURCES+"RedGreen.png";
-			InputStream in = getClass().getClassLoader().getResourceAsStream(img);
-			Image image = new Image(in);
-			toolTip.setGraphic(new ImageView(image));
+			toolTip.setStyle(tooltipStyle);
+			int tokens = service == null ? 0 : service.getConsumedTokens();
+			toolTip.setText("Tokens Consumed In Session: " + tokens);
+			StrangerStatus.setOnMouseEntered(e -> StrangerStatus.setCursor(Cursor.HAND)); // Use Cursor.HELP for help cursor
+			StrangerStatus.setOnMouseExited(e -> StrangerStatus.setCursor(Cursor.DEFAULT));
+			//String img = ClientConstants.RESOURCES+"RedGreen.png";
+			//InputStream in = getClass().getClassLoader().getResourceAsStream(img);
+			//Image image = new Image(in);
+			//toolTip.setGraphic(new ImageView(image));
 			StrangerStatus.setTooltip(toolTip);
 		}
 		
@@ -627,7 +694,7 @@ public class OmegleGPTClient extends Application {
 			upperPane.setHgap(10);
 	        upperPane.add(stranger, 0, 0);
 	        upperPane.add(StrangerStatus, 1, 0);
-	        upperPane.add(toggleAutoDisconnection, 2, 0);
+	        upperPane.add(toggleModeButton, 2, 0);
 		}
 
 

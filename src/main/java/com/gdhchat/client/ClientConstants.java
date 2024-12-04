@@ -33,5 +33,5 @@ public class ClientConstants {
 	static final String[] styleStates = {"cynical", "impulsive", "self-centered", "rude", "scattered", "polite", "spicy", "feisty", "apologetic"};
 
 	final static String interestsDefaultStyle = "-fx-font: 17px \"Consolas\";-fx-border-color: black; -fx-text-fill: grey; -fx-opacity: 0.6;-fx-translate-y: 10%; -fx-alignment: center;";
-
+	final static String tooltipStyle = "-fx-font: 17px \"Consolas\";-fx-border-color: black; -fx-text-fill: white;-fx-translate-y: 10%; -fx-alignment: center;";
 }

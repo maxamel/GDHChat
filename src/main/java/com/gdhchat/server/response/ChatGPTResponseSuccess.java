@@ -9,6 +9,7 @@ public class ChatGPTResponseSuccess extends ChatGPTResponse {
 
     private String finishReason;
     private String role;
+    private int totalTokens;
 
     public ChatGPTResponseSuccess() {
         this.status = ServerConstants.ResponseStatus.SUCCESS;
@@ -26,6 +27,9 @@ public class ChatGPTResponseSuccess extends ChatGPTResponse {
             this.role = node.get("message").get("role").asText(null);
             this.finishReason = node.get("finish_reason").asText(null);
 
+            JsonNode usage = successNode.get("usage");
+            this.totalTokens = usage.get("total_tokens").asInt();
+
         } catch (Exception e) {
             System.err.println("Failed to parse success message: " + e.getMessage());
         }
@@ -37,5 +41,9 @@ public class ChatGPTResponseSuccess extends ChatGPTResponse {
 
     public String getFinishReason() {
         return this.finishReason;
+    }
+
+    public int getTokens() {
+        return this.totalTokens;
     }
 }
