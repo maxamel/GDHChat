@@ -100,7 +100,8 @@ public class OmegleGPTClient extends Application {
 			inputArea.setStyle("-fx-background-color: white; -fx-font: 16px \"Sitka Text\";");
 	        onAreaAction(inputArea);
 	        addImages();
-	        connection.setPrefWidth(100);
+	        connection.setPrefWidth(130);
+	        send.setPrefWidth(130);
 	        send.setText("Send");
 	        onConnectButtonAction();
 	        onSendButtonAction();
@@ -666,7 +667,7 @@ public class OmegleGPTClient extends Application {
 			ColumnConstraints col1 = new ColumnConstraints();
 	        col1.setPercentWidth(50);
 	        ColumnConstraints col2 = new ColumnConstraints();
-	        col2.setPercentWidth(50);        
+	        col2.setPercentWidth(50);
 	        lowerpane.getColumnConstraints().addAll(col1, col2);
 	        
 	        lowerpane.add(send, 0, 0);
